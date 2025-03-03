@@ -4,6 +4,7 @@
 #include "driver/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
+#include "CAN.h"
 
 //digital inputs
 #define BSPD_GPIO          GPIO_NUM_37   //BSPD Status Input pin
@@ -23,8 +24,12 @@
 #define IMD_PWM            GPIO_NUM_12   //IMD Fault PWM Input
 
 // Motherboard system status
-/*
-typedef struct State{
+struct Module{
+  double voltage[20];
+  double temp[18];
+};
+
+struct State{
   bool imd;
   bool ams;
   bool bspd;
@@ -34,21 +39,15 @@ typedef struct State{
   Module modules[5];
   double current;
   double prechargeVoltage;
-};
-
-typedef struct Module{
-  double voltage[20];
-  double temp[18];
-};
-*/
-
-
+};  
 
 extern "C" void app_main(void)
 {
   vTaskDelay(pdMS_TO_TICKS(100));
   printf("Starting...");
-  /*
+
+  esp_log_level_set("*",ESP_LOG_INFO);
+
   State status;
 
   // init inputs
@@ -61,11 +60,12 @@ extern "C" void app_main(void)
   //init outputs
   gpio_set_direction(AMS_LATCH,GPIO_MODE_OUTPUT);
   gpio_set_direction(PRECH_OK,GPIO_MODE_OUTPUT);
-  //init ADC
-  adc_oneshot_unit_handle_t adc1_handle;
 
+  //setup ADC
+  adc_oneshot_unit_handle_t adc1_handle;
   adc_oneshot_unit_init_cfg_t adcconfig = {
   .unit_id = ADC_UNIT_1,
+  .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
   .ulp_mode = ADC_ULP_MODE_DISABLE,
   };
 
@@ -78,15 +78,15 @@ extern "C" void app_main(void)
 
   ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,ADC_CHANNEL_0, &adc_chan_config));
   ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,ADC_CHANNEL_1, &adc_chan_config));
-  */
-  int adc = 0;
-  
+
+  //setup CAN
+  CAN can = CAN(CANRX,CANTX);
+
+  can.begin();
+
+
   while(1){
-    //adc_oneshot_read(adc1_handle,ADC_CHANNEL_0,&adc);
-    //printf("%d",adc);
-    printf("Hello!\n");
-    ESP_LOGI("MAIN", "Hello!");
-    vTaskDelay(pdMS_TO_TICKS(10));  // Allows watchdog to reset
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 
 }
