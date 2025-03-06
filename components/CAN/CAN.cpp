@@ -1,7 +1,6 @@
 #include "CAN.h"
-static const char *TAG = "CAN";
 
-QueueHandle_t can_queue;
+static const char *TAG = "CAN";
 
 twai_message_t txmessage = {
 
@@ -63,16 +62,13 @@ void CAN::txCallback(){
   //this function gets called every 10 milliseconds
 
   //10ms messages:
-  ESP_LOGI(TAG,"10ms message");
 
 
   if(txCallbackCounter%10 == 0){
     //100ms messages:
-    ESP_LOGI(TAG,"100ms message");
   }
 
   if(txCallbackCounter>=100){
-    ESP_LOGI(TAG,"1 second message");
     txCallbackCounter = 0;
   }
   txCallbackCounter++;
@@ -91,7 +87,6 @@ void CAN::rxTask(){
   while(1){
     // wait until a message is recieved, then send it to the queue.
     if(twai_receive(&rx_msg,portMAX_DELAY) == ESP_OK){
-      xQueueSend(can_queue, &rx_msg, pdMS_TO_TICKS(10));
     }
     vTaskDelay(pdMS_TO_TICKS(10));
   }

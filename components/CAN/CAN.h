@@ -1,5 +1,5 @@
-#ifndef __CAN__
-#define __CAN__
+#ifndef CAN_H
+#define CAN_H
 
 #include <stdio.h>
 #include <driver/twai.h>
@@ -7,7 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 #include "freertos/queue.h"
-
+#include "state.h"
 
 class CAN{
   public:

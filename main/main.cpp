@@ -5,6 +5,7 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
 #include "CAN.h"
+#include "state.h"
 
 //digital inputs
 #define BSPD_GPIO          GPIO_NUM_37   //BSPD Status Input pin
@@ -23,32 +24,15 @@
 #define PRECHSENSE_ADC     GPIO_NUM_1    //HV Precharge Sense Input
 #define IMD_PWM            GPIO_NUM_12   //IMD Fault PWM Input
 
-// Motherboard system status
-struct Module{
-  double voltage[20];
-  double temp[18];
-};
-
-struct State{
-  bool imd;
-  bool ams;
-  bool bspd;
-  bool latch;
-  bool precharge;
-  bool HV;
-  Module modules[5];
-  double current;
-  double prechargeVoltage;
-};  
-
 extern "C" void app_main(void)
 {
+
+  static const char* TAG = "main";
+
   vTaskDelay(pdMS_TO_TICKS(100));
   printf("Starting...");
 
   esp_log_level_set("*",ESP_LOG_INFO);
-
-  State status;
 
   // init inputs
   gpio_set_direction(BSPD_GPIO,GPIO_MODE_INPUT);
@@ -84,9 +68,10 @@ extern "C" void app_main(void)
 
   can.begin();
 
-
+  double voltage = 0.1;
   while(1){
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(50));
+
   }
 
 }
