@@ -1,12 +1,41 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
+#include "stdio.h"
+
+#define BMS_CAN_TIMEOUT_ENABLED false
+
+#define THRESHOLD_OVERVOLTAGE 4.3
+#define THRESHOLD_UNDERVOLTAGE 2.7
+#define THRESHOLD_OVERTEMP 60
+#define TEMP_VOLTAGE_TIMEOUT_MS 1000
+#define THRESHOLD_OVERCURRENT 100
+#define THRESHOLD_CHARGECURRENT -6
+
+
+
 // Module information
 typedef struct{
   int id;
   double voltage[20];
   double temp[18];
 } Module_t;
+
+typedef struct {
+
+  bool overVoltage = 1;
+  bool underVoltage = 1;
+  bool overTemp = 1;
+  bool CANTimeout = 1;
+  bool overCurrent = 1;
+  bool openCell = 1;
+  bool openThermistor = 1;
+
+}ErrorFlags;
 
 //Motherboard System Status
 class State{
@@ -17,10 +46,10 @@ class State{
     double SOC; // State of Charge
     bool chargeMode; // true means the accumulator is in charging mode
 
-
     //analog inputs to the mobo
     double packCurrent;           // Current measured from current sensor
     double prechargeVoltage;  // Precharge voltage sensed from flyback converter
+    
     // safety loop - True means relay is closed, False means open. 
     //All of these are inputs with the exception of AMS, which is controlled by the motherboard
     bool imd;                //IMD status - True means relay is closed, False means open. 
@@ -29,11 +58,13 @@ class State{
     bool latch;              //Latch status - True means relay is closed, False means open. 
     bool precharge;          //Precharge status - True means precharge has begin, False means not yet. 
     bool HVact;              //AIR+ status - True = precharge is done and AIR+ is closed
-    Module_t modules[5];     //array of modules
     
-
-  public:
+    public:
     State();
+    Module_t modules[5];     //array of modules
+    ErrorFlags flags;
+    uint16_t canTime;
+
     //getters and setters
 
     void setIMD(bool relayState);
@@ -64,7 +95,11 @@ class State{
     double getAverageVoltage(); 
     double getAverageTemp();
 
-
+    //functions
+    void printModules(); // sends module info to serial
+    void errorCheck();
+    void resetFlags();
+    void errorCheckWrapper(void *arg);
 };
 
 extern State moboState;

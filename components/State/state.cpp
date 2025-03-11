@@ -1,5 +1,4 @@
 #include "state.h"
-#include "esp_log.h"
 
 static const char *TAG = "State";
 
@@ -7,8 +6,9 @@ State moboState = State();
 
 State::State(){
 
-  imd = ams = bspd = latch = precharge = HVact = lowestVoltage = highestTemp = chargeMode = 0;
-
+  imd = ams = bspd = latch = precharge = HVact = chargeMode = 0;
+  lowestVoltage = highestTemp = 0.0;
+  flags = {0};
 };
 
 //setters
@@ -81,6 +81,10 @@ bool State::getHVAct(){
   return HVact;
 };
 
+double State::getCurrent(){
+  return packCurrent;
+}
+
 double State::getModuleVoltage(int module, int cell){
   return modules[module].voltage[cell];
 };
@@ -112,4 +116,23 @@ double State::getAverageTemp(){
     }
   }
   return sum/100;
+};
+
+void State::printModules(){
+  printf("===Module Info===\n");
+  printf("   Module 1 --- Cells        Module 2 --- Cells        Module 3 --- Cells        Module 4 --- Cells        Module 5 --- Cells     \n");
+  for(int k=0;k<5;k++){
+    for(int j=0; j<5;j++){
+      for(int i =0;i<4;i++){
+        printf("|%.3f",modules[j].voltage[i+k*4]);
+      }
+      printf("| ");
+    }
+    printf("\n");
+  }
+};
+
+void State::resetFlags(){
+  ErrorFlags clearedflags = {};
+  flags = clearedflags;
 };

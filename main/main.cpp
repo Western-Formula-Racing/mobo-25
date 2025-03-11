@@ -6,6 +6,7 @@
 #include "esp_log.h"
 #include "CAN.h"
 #include "state.h"
+#include "BMS.h"
 
 //digital inputs
 #define BSPD_GPIO          GPIO_NUM_37   //BSPD Status Input pin
@@ -29,7 +30,7 @@ extern "C" void app_main(void)
 
   static const char* TAG = "main";
 
-  vTaskDelay(pdMS_TO_TICKS(100));
+  vTaskDelay(pdMS_TO_TICKS(1000));
   printf("Starting...");
 
   esp_log_level_set("*",ESP_LOG_INFO);
@@ -66,12 +67,16 @@ extern "C" void app_main(void)
   //setup CAN
   CAN can = CAN(CANRX,CANTX);
 
+
   can.begin();
 
-  double voltage = 0.1;
+  xTaskCreatePinnedToCore(errorCheck, "errorCheck", 4096, nullptr, 1, nullptr, 1);
   while(1){
-    vTaskDelay(pdMS_TO_TICKS(50));
-
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // Start error checking task
+    moboState.resetFlags();
+    moboState.printModules();
   }
-
 }
+
+
