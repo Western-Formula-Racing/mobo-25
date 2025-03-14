@@ -12,7 +12,7 @@
 #include "esp_adc/adc_oneshot.h"
 
 void moboSetup();
-void prechargeTask();
+void prechargeTask(void *pvParameters);
 void inputTask(void *pvParameters);
 
 #endif

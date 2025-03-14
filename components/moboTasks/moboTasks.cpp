@@ -24,6 +24,7 @@ double prechargeVoltage = 0;
 adc_oneshot_unit_handle_t adc1_handle;
 
 void moboSetup(){
+
     // init inputs
     gpio_set_direction(BSPD_GPIO,GPIO_MODE_INPUT);
     gpio_set_direction(IMD_GPIO,GPIO_MODE_INPUT);
@@ -31,6 +32,7 @@ void moboSetup(){
     gpio_set_direction(ORION_GPIO,GPIO_MODE_INPUT);
     gpio_set_direction(HV_GPIO,GPIO_MODE_INPUT);
     gpio_set_direction(AIRN_GPIO,GPIO_MODE_INPUT);
+
     //init outputs
     gpio_set_direction(AMS_LATCH,GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(PRECH_OK,GPIO_MODE_OUTPUT);
@@ -54,6 +56,7 @@ void moboSetup(){
 }
 
 void inputTask(void *pvParameters){
+  int adc_raw = 0;
   while(1){
     //digital inputs
     imd = gpio_get_level(IMD_GPIO);
@@ -62,12 +65,24 @@ void inputTask(void *pvParameters){
     latch = gpio_get_level(LATCH_GPIO);
     precharge = gpio_get_level(AIRN_GPIO);
     HVact = gpio_get_level(HV_GPIO);
+
     //analog (for now just raw values, later will be converted)
-    int adc_raw = 0;
     adc_oneshot_read(adc1_handle,CURSENSE_ADC,&adc_raw);
     setCurrent(adc_raw*CURRENT_ADC_SCALING);
     adc_oneshot_read(adc1_handle,PRECHSENSE_ADC,&adc_raw);
-
+    
+    vTaskDelay(pdMS_TO_TICKS(100)); //run every 100ms
   }
-  
+}
+
+void prechargeTask(void* pvParameters){
+  while(1){
+    //check if safety loop is closed + precharge voltage is present
+    if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD){
+      gpio_set_level(PRECH_OK,1); // close AIR+
+    } 
+    else{
+      gpio_set_level(PRECH_OK,0); // open AIR+
+    }
+  }
 }

@@ -22,17 +22,15 @@ extern "C" void app_main(void)
 
   //setup CAN
   CAN can = CAN(CANRX,CANTX);
-
   can.begin();
-  moboSetup();
-  // Start error checking task
-  //xTaskCreatePinnedToCore(errorCheck, "errorCheck", 4096, nullptr, 1, nullptr, 1);
+
+  moboSetup(); //setup i/o
+  xTaskCreatePinnedToCore(errorCheckTask,"Error Check",4096,NULL,configMAX_PRIORITIES-5,NULL,1); //start BMS task
+  xTaskCreatePinnedToCore(inputTask, "inputTask", 4096, NULL,configMAX_PRIORITIES-6, NULL, 1); //start input task
+  
   while(1){
+    //printModules();
     vTaskDelay(pdMS_TO_TICKS(1000));
-    //moboState.resetFlags();
-    //moboState.printModules();
-    //printf("BMS Relay State: %d\n\n",gpio_get_level(AMS_LATCH));
-    //printf("%d %d %d %d",moboState.flags.underVoltage,moboState.flags.CANTimeout,moboState.flags.overCurrent,moboState.flags.openCell);
   }
 }
 

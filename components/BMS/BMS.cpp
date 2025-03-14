@@ -16,8 +16,6 @@ uint32_t canTime = 0;
 
 Module modules[5] = {};
 
-//BMS consists of 2 tasks: recieve CAN signals and update variables, and check for errors, opening the relay if an error is detected.
-
 void clearFlags(){
 overVoltage = 0;
 underVoltage = 0;
@@ -28,12 +26,10 @@ openCell = 0;
 openThermistor = 0;
 }
 
-void startBMS(){
-  xTaskCreatePinnedToCore(errorCheckTask,"Error Check",4096,NULL,configMAX_PRIORITIES-5,NULL,1);
-}
-
 
 void errorCheckTask(void *pvParameters){
+  //2 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
+  vTaskDelay(pdMS_TO_TICKS(2000)); 
   while(1){
     //Check every cell for open, under, or overvoltage and temps
     for(int i = 0;i<5;i++){

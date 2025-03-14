@@ -1,3 +1,6 @@
+// Component - BMS
+// Function: Open or close AMS relay depending on BMS state
+
 #ifndef BMS_H
 #define BMS_H
 
@@ -15,11 +18,11 @@ struct Module{
 
 void clearFlags();
 void errorCheckTask(void *pvParameters);
-void BMSCanTask(void *pvParameters);
 void updateCanTimeout(int time);
 void setModuleVoltage(int module, int cell, double newVoltage);
 void setModuleTemp(int module, int thermistor, double newTemp);
 void updateCanTimeout(int time);
 void setCurrent(double current);
+void printModules();
 
 #endif
