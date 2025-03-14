@@ -1,1 +1,1 @@
-idf_component_register(SRCS "CAN.cpp" INCLUDE_DIRS "." REQUIRES "driver" "State")
+idf_component_register(SRCS "CAN.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "BMS")

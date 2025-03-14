@@ -7,7 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
 #include "freertos/queue.h"
-#include "state.h"
+#include "BMS.h"
 
 class CAN{
   public:

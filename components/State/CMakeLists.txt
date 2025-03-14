@@ -1,1 +1,0 @@
-idf_component_register(SRCS "state.cpp" INCLUDE_DIRS ".")

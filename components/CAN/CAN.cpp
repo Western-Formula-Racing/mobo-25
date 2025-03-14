@@ -1,5 +1,4 @@
 #include "CAN.h"
-#include "CANSignals.h"
 
 static const char *TAG = "CAN";
 
@@ -86,16 +85,18 @@ void CAN::rxTask(){
   twai_message_t rx_msg;
   ESP_LOGI(TAG,"Rx Task Started");
   while(1){
+    uint32_t lastRxTime = 0;
     // wait until a message is recieved, then send it to the queue.
     if(twai_receive(&rx_msg,portMAX_DELAY) == ESP_OK){
 
       uint32_t currentTime = xTaskGetTickCount() * portTICK_PERIOD_MS;
-      ESP_LOGI(TAG,"Message recieved with ID: %ld", rx_msg.identifier);
+      //ESP_LOGI(TAG,"Message recieved with ID: %ld", rx_msg.identifier);
 
       if(rx_msg.identifier >= 1001 && rx_msg.identifier <= 1026){
 
-        moboState.canTime = currentTime - moboState.canTime; //only update timeout for voltage and temp messages
-        
+        updateCanTimeout(currentTime-lastRxTime); //only update timeout for voltage and temp messages
+        lastRxTime = currentTime;
+
         double s1 = (rx_msg.data[0] | (int)rx_msg.data[1] << 8)*0.001;
         double s2 = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.001;
         double s3 = (rx_msg.data[4] | (int)rx_msg.data[5] << 8)*0.001;
@@ -103,16 +104,17 @@ void CAN::rxTask(){
         int id = rx_msg.identifier-1002;
         int module = id/5;
         int cell = id*4 - module*20;
-        ESP_LOGI(TAG,"writing to module %d, id %d, starting cell %d", module, id, cell);
-        moboState.setModuleVoltage(module,cell++,s1);
-        moboState.setModuleVoltage(module,cell++,s2);
-        moboState.setModuleVoltage(module,cell++,s3);
-        moboState.setModuleVoltage(module,cell++,s4);
+        //ESP_LOGI(TAG,"writing to module %d, id %d, starting cell %d", module, id, cell);
+        setModuleVoltage(module,cell++,s1);
+        setModuleVoltage(module,cell++,s2);
+        setModuleVoltage(module,cell++,s3);
+        setModuleVoltage(module,cell++,s4);
       }
       else if(rx_msg.identifier >= 1027 && rx_msg.identifier <= 1051){
 
-        moboState.canTime = currentTime - moboState.canTime; //only update timeout for voltage and temp messages
-
+        updateCanTimeout(currentTime-lastRxTime); //only update timeout for voltage and temp messages
+        lastRxTime = currentTime;
+        
         double s1 = (rx_msg.data[0] | (int)rx_msg.data[1] << 8)*0.01;
         double s2 = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.01;
         double s3 = (rx_msg.data[4] | (int)rx_msg.data[5] << 8)*0.01;
@@ -121,11 +123,11 @@ void CAN::rxTask(){
         int module = id/5;
         int cell = id*4 - module*20;
 
-        moboState.setModuleTemp(module,cell++,s1);
-        moboState.setModuleTemp(module,cell++,s2);
+        setModuleTemp(module,cell++,s1);
+        setModuleTemp(module,cell++,s2);
         if((id+1)%5!= 0){
-          moboState.setModuleTemp(module,cell++,s3);
-          moboState.setModuleTemp(module,cell++,s4);
+          setModuleTemp(module,cell++,s3);
+          setModuleTemp(module,cell++,s4);
         }
       }
     }
