@@ -22,6 +22,7 @@ bool HVact = 0;              //AIR+ status - True = precharge is done and AIR+ i
 double prechargeVoltage = 0;
 
 adc_oneshot_unit_handle_t adc1_handle;
+adc_cali_handle_t adc_cali_handle;
 
 void moboSetup(){
 
@@ -43,20 +44,28 @@ void moboSetup(){
     .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
     .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
-  
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcconfig, &adc1_handle));
-  
+    
     adc_oneshot_chan_cfg_t adc_chan_config = {
-      .atten = ADC_ATTEN_DB_6,
+      .atten = ADC_ATTEN_DB_12,
       .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
-  
+
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,PRECHSENSE_ADC, &adc_chan_config));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config));  
+
+    //setup ADC Curve fitting scheme
+    adc_cali_curve_fitting_config_t cali_config = {
+        .unit_id = ADC_UNIT_1,
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+    };
+    ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle));
 }
 
 void inputTask(void *pvParameters){
   int adc_raw = 0;
+  int adc_voltage = 0;
   while(1){
     //digital inputs
     imd = gpio_get_level(IMD_GPIO);
@@ -66,23 +75,35 @@ void inputTask(void *pvParameters){
     precharge = gpio_get_level(AIRN_GPIO);
     HVact = gpio_get_level(HV_GPIO);
 
-    //analog (for now just raw values, later will be converted)
+    //analog inputs
     adc_oneshot_read(adc1_handle,CURSENSE_ADC,&adc_raw);
     setCurrent(adc_raw*CURRENT_ADC_SCALING);
+
+    //read precharge voltage - Conversion is ~2.4mV/V, so at 60V we expect 133mV. The iso-opamp has an offset of ~725mV
+    //this is honestly a pretty poor estimate of the actual voltage, but it works for our purposes
     adc_oneshot_read(adc1_handle,PRECHSENSE_ADC,&adc_raw);
+    adc_cali_raw_to_voltage(adc_cali_handle,adc_raw,&adc_voltage); //get adc reading in mV
+    adc_voltage -= PRECHARGE_OFFSET_MV; //apply offset
+    adc_voltage *= 416.6;
+    prechargeVoltage = adc_voltage;
     
     vTaskDelay(pdMS_TO_TICKS(100)); //run every 100ms
   }
 }
 
 void prechargeTask(void* pvParameters){
+  int prechargeCounter = 0;
   while(1){
-    //check if safety loop is closed + precharge voltage is present
-    if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD){
+    //check if safety loop is closed + precharge voltage is present for at least 600ms
+    if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD && prechargeCounter > 3){
       gpio_set_level(PRECH_OK,1); // close AIR+
-    } 
+    } else if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD){
+      prechargeCounter++;
+    }
     else{
       gpio_set_level(PRECH_OK,0); // open AIR+
+      prechargeCounter = 0;
     }
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }

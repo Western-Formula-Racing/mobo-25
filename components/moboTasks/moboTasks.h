@@ -10,6 +10,8 @@
 #include "driver/gpio.h"
 #include "BMS.h"
 #include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 
 void moboSetup();
 void prechargeTask(void *pvParameters);
