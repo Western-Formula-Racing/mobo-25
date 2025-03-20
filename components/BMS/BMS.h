@@ -24,5 +24,6 @@ void setModuleTemp(int module, int thermistor, double newTemp);
 void updateCanTimeout(int time);
 void setCurrent(double current);
 void printModules();
+double getMaxTemp();
 
 #endif

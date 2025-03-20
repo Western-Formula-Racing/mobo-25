@@ -12,10 +12,11 @@
 //digital outputs
 #define AMS_LATCH          GPIO_NUM_9    //AMS Latch output pin
 #define PRECH_OK           GPIO_NUM_36   //Precharge OK output pin
+#define FAN_PWM_PIN        GPIO_NUM_8    // Fan PWM pin
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
-#define IMD_PWM            GPIO_NUM_12   //IMD Fault PWM Input
+#define IMD_PWM            GPIO_NUM_12      //IMD Fault PWM Input
 
 //BMS
 
@@ -27,6 +28,7 @@
 #define THRESHOLD_OVERCURRENT 100
 #define THRESHOLD_CHARGECURRENT -6
 
+#define MAX_FAN_POWER 0.5 // Fan power cap as a ratio, max 1
 #define CURRENT_ADC_SCALING 9999999999
 #define PRECHARGE_THRESHOLD 650000
 #define PRECHARGE_OFFSET_MV 725

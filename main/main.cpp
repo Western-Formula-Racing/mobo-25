@@ -8,6 +8,7 @@
 #include "moboTasks.h"
 #include "BMS.h"
 #include "config.h"
+#include "driver/ledc.h"
 
 
 extern "C" void app_main(void)
@@ -28,9 +29,19 @@ extern "C" void app_main(void)
   //xTaskCreatePinnedToCore(errorCheckTask,"Error Check",4096,NULL,configMAX_PRIORITIES-5,NULL,1); //start BMS task
   xTaskCreatePinnedToCore(inputTask, "inputTask", 4096, NULL,configMAX_PRIORITIES-6, NULL, 1); //start input task
   xTaskCreatePinnedToCore(prechargeTask,"prechargeTask",2048,NULL,configMAX_PRIORITIES-6,NULL,1);
+  xTaskCreatePinnedToCore(coolingTask,"coolingTask",2048,NULL,configMAX_PRIORITIES-7,NULL,1);
+
   while(1){
     //printModules();
+
     vTaskDelay(pdMS_TO_TICKS(1000));
+    ledc_set_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,100);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ledc_set_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,25);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    printf("heartbeat.\n");
   }
 }
 

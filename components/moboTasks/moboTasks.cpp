@@ -44,6 +44,7 @@ void moboSetup(){
     .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
     .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
+
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcconfig, &adc1_handle));
     
     adc_oneshot_chan_cfg_t adc_chan_config = {
@@ -61,6 +62,29 @@ void moboSetup(){
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
     ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle));
+
+    //Setup Fan control PWM
+
+    ledc_timer_config_t ledc_timer = {
+      .speed_mode       = LEDC_LOW_SPEED_MODE,
+      .duty_resolution  = LEDC_TIMER_8_BIT,
+      .timer_num        = LEDC_TIMER_0,
+      .freq_hz          = 25000,
+      .clk_cfg          = LEDC_AUTO_CLK
+    };
+
+    ledc_channel_config_t ledc_channel = {
+      .gpio_num       = FAN_PWM_PIN,
+      .speed_mode     = LEDC_LOW_SPEED_MODE,
+      .channel        = LEDC_CHANNEL_0,
+      .intr_type      = LEDC_INTR_DISABLE,
+      .timer_sel      = LEDC_TIMER_0,
+      .duty           = 0, // Set duty to 0%
+      .hpoint         = 0,
+    };
+  
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 }
 
 void inputTask(void *pvParameters){
@@ -105,5 +129,25 @@ void prechargeTask(void* pvParameters){
       prechargeCounter = 0;
     }
     vTaskDelay(pdMS_TO_TICKS(200));
+  }
+}
+
+void coolingTask(void *pvParameters){
+  double temp;
+  int dutyCycle;
+  while(1){
+    temp = getMaxTemp();
+    //calculate fan power from temps:
+    if(temp>=THRESHOLD_OVERTEMP-5){
+      dutyCycle = 255; //emergency cooling mode when within 5 degrees of maximum
+    }
+    else{
+      dutyCycle = (255*MAX_FAN_POWER)*(getMaxTemp()/THRESHOLD_OVERTEMP);
+    }
+
+    ledc_set_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0,dutyCycle);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0);
+
+    vTaskDelay(1000); //update once a second
   }
 }

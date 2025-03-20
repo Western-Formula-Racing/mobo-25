@@ -128,3 +128,8 @@ void printModules(){
     }
   }
 };
+
+double getMaxTemp(){
+  int max;
+  
+}
