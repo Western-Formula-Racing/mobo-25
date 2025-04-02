@@ -130,6 +130,25 @@ void CAN::rxTask(){
           setModuleTemp(module,cell++,s4);
         }
       }
+      else if(rx_msg.identifier == 1000){
+        //Error message!
+        uint8_t module_id = rx_msg.data[0];
+        uint8_t errorcode = rx_msg.data[1];
+        double voltage = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.001;
+        uint8_t voltageIndex = rx_msg.data[4];
+        double temperature = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.01;
+        uint8_t tempIndex = rx_msg.data[7];
+        errorFlags newError = {
+          .errored = true,
+          .moduleNumber = module_id,
+          .errorCode = errorcode,
+          .cellVoltage = voltage,
+          .cellIndex = voltageIndex,
+          .thermistorTemp = temperature,
+          .thermistorIndex = tempIndex
+        };
+        setErrorFlags(newError);
+      }
     }
   }
 }

@@ -2,13 +2,7 @@
 
 const char* TAG = "BMS";
 
-bool overVoltage = 0;
-bool underVoltage = 0;
-bool overTemp = 0;
-bool CANTimeout = 0;
-bool overCurrent = 0;
-bool openCell = 0;
-bool openThermistor = 0;
+errorFlags errors; 
 
 double packCurrent = 0.0;
 
@@ -16,73 +10,38 @@ uint32_t canTime = 0;
 
 Module modules[5] = {};
 
-void clearFlags(){
-overVoltage = 0;
-underVoltage = 0;
-overTemp = 0;
-CANTimeout = 0;
-overCurrent = 0;
-openCell = 0;
-openThermistor = 0;
+void setErrorFlags(errorFlags newError){
+  errors = newError;
 }
 
+errorFlags getErrorFlags(){
+  return errors;
+}
 
 void errorCheckTask(void *pvParameters){
-  //2 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
-  vTaskDelay(pdMS_TO_TICKS(2000)); 
+  //3 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
+  vTaskDelay(pdMS_TO_TICKS(3000));
   while(1){
-    //Check every cell for open, under, or overvoltage and temps
-    for(int i = 0;i<5;i++){
-      for(int j = 0 ;j<20;j++){
-        if(modules[i].voltage[j] == 0){
-          openCell = true;
-          ESP_LOGE(TAG,"Open Cell: Module %d Cell %d",i,j);
-        }
-        if(modules[i].voltage[j] > THRESHOLD_OVERVOLTAGE){
-          overVoltage = true;
-          ESP_LOGE(TAG,"Overvoltage: Module %d Cell %d",i,j);
-        }
-        if(modules[i].voltage[j] < THRESHOLD_UNDERVOLTAGE){
-          underVoltage = true;
-          ESP_LOGE(TAG,"Undervoltage: Module %d Cell %d",i,j);
-        }
-      }
-      for(int k = 0 ;k<18;k++){
-        if(modules[i].temp[k] == 0){
-          openThermistor = true;
-          ESP_LOGE(TAG,"Open Thermistor: Module %d Thermistor %d",i,k);
-        }
-        if(modules[i].temp[k] > THRESHOLD_OVERTEMP){
-          overTemp = true;
-          ESP_LOGE(TAG,"Overtemp: Module %d Thermistor %d",i,k);
-        }
-      }
+    //Check CAN error struct for errors:
+    if(errors.errored == true){
+      raiseError();
     }
+    
     //check CAN timeout
     if(BMS_CAN_TIMEOUT_ENABLED && canTime > TEMP_VOLTAGE_TIMEOUT_MS ){
-      CANTimeout = true;
-      ESP_LOGE(TAG,"CAN Timeout: %ld ms", canTime);
+      errors.errored = true;
+      errors.errorCode = 82;
+      errors.timeoutTime = canTime;
+      raiseError();
     }
+    //check overcurrent
     if(packCurrent>THRESHOLD_OVERCURRENT || packCurrent<THRESHOLD_CHARGECURRENT){
-      overCurrent = true;
-      ESP_LOGE(TAG,"Overcurrent detected: %.3fA",packCurrent);
+      errors.errored = true;
+      errors.errorCode = 83;
+      errors.timeoutCurrent = packCurrent;
+      raiseError();
     }
-    //check for error, if yes then open AMS relay. If they are clear AMS relay closes.
-    if(CANTimeout == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else if(openCell == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else if(openThermistor == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else if(overCurrent == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else if(overVoltage == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else if(underVoltage == 1){
-      gpio_set_level(GPIO_NUM_9,0);
-    } else{
-      gpio_set_level(GPIO_NUM_9,1);
-    }
+
     vTaskDelay(pdMS_TO_TICKS(100));
   }
 
@@ -129,7 +88,71 @@ void printModules(){
   }
 };
 
+void raiseError(){
+  gpio_set_level(GPIO_NUM_9,0);
+  while(1){
+    switch (errors.errorCode)
+    {
+    case 69:
+      ESP_LOGE(TAG,"Error: Thermistor %d overtemp: %.2f degC",errors.thermistorIndex,errors.thermistorTemp);
+      break;
+    case 70:
+      ESP_LOGE(TAG,"Error: Cell %d undervoltage: %.2f V",errors.cellIndex,errors.cellVoltage);
+      break;
+    case 71:
+      ESP_LOGE(TAG,"Error: Cell %d overvoltage: %.2f V",errors.cellIndex,errors.cellVoltage);
+      break;
+    case 72:
+      ESP_LOGE(TAG,"Error: Cell Imbalance >0.2V");
+      break;
+    case 73:
+      ESP_LOGE(TAG,"Error: Open Cell %d",errors.cellIndex);
+      break;
+    case 74:
+      ESP_LOGE(TAG,"Error: Open Thermistor %d",errors.thermistorIndex);
+      break;
+    case 75:
+      ESP_LOGE(TAG,"Error: LTC6813 DIAGN Fail");
+      break;
+    case 76:
+      ESP_LOGE(TAG,"Error: LTC6813 AXST Fail");
+      break;
+    case 77:
+      ESP_LOGE(TAG,"Error: LTC6813 CVST Fail");
+      break;
+    case 78:
+      ESP_LOGE(TAG,"Error: LTC6813 STATST Fail");
+      break;
+    case 79:
+      ESP_LOGE(TAG,"Error: LTC6813 ADOW Fail");
+      break;
+    case 80:
+      ESP_LOGE(TAG,"Error: LTC6813 AXOW Fail");
+      break;
+    case 81:
+      ESP_LOGE(TAG,"Error: LTC6813 ADOL Fail");
+      break;
+    case 82:
+      ESP_LOGE(TAG,"Error: LTC6813 CRC Fail");
+      break;
+    case 83:
+      ESP_LOGE(TAG,"Error: Overcurrent: %.2f A",errors.timeoutCurrent);
+      break;
+    case 84:
+      ESP_LOGE(TAG,"Error: Can Timeout: %d ms",errors.timeoutTime);
+      break;
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
 double getMaxTemp(){
-  int max;
-  
+  double max = 0;
+  for(int i =0;i<5;i++){
+    for(int j = 0;j<18;j++){
+      if(modules[i].temp[j]>max) max = modules[i].temp[j]; 
+
+    }
+  }
+  return max;
 }

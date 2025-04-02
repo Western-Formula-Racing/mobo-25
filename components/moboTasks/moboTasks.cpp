@@ -112,6 +112,7 @@ void inputTask(void *pvParameters){
     prechargeVoltage = adc_voltage;
     
     vTaskDelay(pdMS_TO_TICKS(100)); //run every 100ms
+    
   }
 }
 
