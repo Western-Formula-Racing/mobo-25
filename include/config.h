@@ -7,8 +7,9 @@
 #define ORION_GPIO         GPIO_NUM_5    //Orion Status (if orion is used)
 #define HV_GPIO            GPIO_NUM_10   //HV Status (AIR+ on)
 #define AIRN_GPIO          GPIO_NUM_11   //AIR- Status
-#define CANTX              GPIO_NUM_47
-#define CANRX              GPIO_NUM_48
+#define CANTX              GPIO_NUM_47   //CANTX pin
+#define CANRX              GPIO_NUM_48   //CANRX pin
+#define CHARGE_PIN         GPIO_NUM_17   //if pulled down, accumulator is in chargecart
 //digital outputs
 #define AMS_LATCH          GPIO_NUM_9    //AMS Latch output pin
 #define PRECH_OK           GPIO_NUM_36   //Precharge OK output pin
@@ -17,20 +18,18 @@
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
 #define IMD_PWM            GPIO_NUM_12      //IMD Fault PWM Input
-
+#define ADC_SAMPLES        10
 //BMS
 
-#define BMS_CAN_TIMEOUT_ENABLED true
+#define BMS_CAN_TIMEOUT_ENABLED false
 #define THRESHOLD_OVERVOLTAGE 4.3
 #define THRESHOLD_UNDERVOLTAGE 2.7
 #define THRESHOLD_OVERTEMP 60
 #define TEMP_VOLTAGE_TIMEOUT_MS 2000
-#define THRESHOLD_OVERCURRENT 100
-#define THRESHOLD_CHARGECURRENT -6
+#define THRESHOLD_OVERCURRENT 10000
+#define THRESHOLD_CHARGECURRENT -6000
 
 #define MAX_FAN_POWER 0.5 // Fan power cap as a ratio, max 1
-#define CURRENT_ADC_SCALING 9999999999
-#define PRECHARGE_THRESHOLD 60
 #define PRECHARGE_OFFSET_MV 725
 
 #endif

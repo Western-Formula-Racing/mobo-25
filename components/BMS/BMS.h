@@ -11,6 +11,7 @@
 #include "driver/gpio.h"
 #include "driver/twai.h"
 
+//module values
 struct Module{
   uint8_t status;
   double moduleTemp;
@@ -38,31 +39,44 @@ struct Module{
   82 - LTC6813 repeating CRC fail
   83 - Overcurrent fail
   84 - Can Timeout fail
+  85 - CAN errors > 96
 */
 
 struct errorFlags{
-  bool errored = 0;
-  uint8_t moduleNumber;
-  uint8_t errorCode;
-  double cellVoltage;
-  uint8_t cellIndex;
-  double thermistorTemp;
-  uint8_t thermistorIndex;
-  int timeoutTime = 0;
-  double timeoutCurrent = 0;
+  bool errored = false;       //has an error been raised 
+  //////////////////////////  //error-specific values:
+  uint8_t moduleNumber = 0;       //module that raised the error 
+  uint8_t errorCode = 0;          //error number
+  double cellVoltage = 0;         //cell voltage value
+  uint8_t cellIndex = 0;          //cell number
+  double thermistorTemp = 0;      //thermistor temperature value
+  uint8_t thermistorIndex = 0;    //thermistor number
+  int timeoutTime = 0;        //CAN timeout period
+  double timeoutCurrent = 0;  //amperage at fault time
 
 };
 
-void setErrorFlags(errorFlags newError);
-errorFlags getErrorFlags();
-void errorCheckTask(void *pvParameters);
-void updateCanTimeout(int time);
+// functions used for CAN input (setters):
 void setModuleVoltage(int module, int cell, double newVoltage);
 void setModuleTemp(int module, int thermistor, double newTemp);
-void updateCanTimeout(int time);
+void updateCanTimeout(int index, uint32_t time);
+
+// functions used for other input:
 void setCurrent(double current);
-void printModules();
-void raiseError();
+
+// Error tracking and raising:
+void raiseError(); // Opens AMS relay, spits error on serial
+void setErrorFlags(errorFlags newError); //setter
+errorFlags getErrorFlags(); //getter
+void errorCheckTask(void *pvParameters); //background error detection task
+
+// info for other functions
+double getPackCurrent();
 double getMaxTemp();
+double getSOC();
+double getPackVoltage();
+
+//serial debugging
+void printModules();
 
 #endif

@@ -8,7 +8,6 @@
 #include "moboTasks.h"
 #include "BMS.h"
 #include "config.h"
-#include "driver/ledc.h"
 
 
 extern "C" void app_main(void)
@@ -21,26 +20,27 @@ extern "C" void app_main(void)
   TaskHandle_t prechargeTaskHandle;
   TaskHandle_t coolingTaskHandle;
 
-
-  vTaskDelay(pdMS_TO_TICKS(1000));
   printf("Starting...");
+  vTaskDelay(pdMS_TO_TICKS(3000)); // wait for serial to connect
 
   esp_log_level_set("*",ESP_LOG_INFO);
+  
+  //setup i/o
+  moboSetup(); 
 
   //setup CAN
   CAN can = CAN(CANRX,CANTX);
   can.begin();
 
-  moboSetup(); //setup i/o
   xTaskCreatePinnedToCore(errorCheckTask,"Error Check",4096,NULL,configMAX_PRIORITIES-5,NULL,1); //start BMS task
+  xTaskCreatePinnedToCore(canAlertTask,"CAN Alerts",2048,NULL,configMAX_PRIORITIES-5,NULL,1); //start CAN Alert watchdog
   xTaskCreatePinnedToCore(inputTask, "inputTask", 4096, NULL,configMAX_PRIORITIES-6, &inputTaskHandle, 1); //start input task
   xTaskCreatePinnedToCore(prechargeTask,"prechargeTask",2048,NULL,configMAX_PRIORITIES-6,&prechargeTaskHandle,1);
   xTaskCreatePinnedToCore(coolingTask,"coolingTask",2048,NULL,configMAX_PRIORITIES-7,&coolingTaskHandle,1);
+  xTaskCreatePinnedToCore(telemetryTask,"telemetryTask",4096,NULL,configMAX_PRIORITIES-10,NULL,1);
 
   while(1){
-    printModules();
-    if( getErrorFlags().errored == 0
-      ){
+    if(getErrorFlags().errored == 0){
         ESP_LOGI(TAG,"heartbeat.\n"); 
       }
     else{
@@ -52,8 +52,7 @@ extern "C" void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(1000));
       }
     }
-
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 

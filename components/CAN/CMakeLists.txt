@@ -1,1 +1,1 @@
-idf_component_register(SRCS "CAN.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "BMS")
+idf_component_register(SRCS "CAN.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "BMS" "moboTasks" "esp_timer")

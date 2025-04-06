@@ -14,9 +14,19 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "driver/ledc.h"
 
+enum state{
+  IDLE = 0,
+  PRECHARGE,
+  ACTIVE,
+  CHARGING,
+  FAULT
+};
+
 void moboSetup();
+state getStatus();
 void prechargeTask(void *pvParameters);
 void inputTask(void *pvParameters);
 void coolingTask(void *pvParameters);
+void telemetryTask(void *pvParameters);
 
 #endif

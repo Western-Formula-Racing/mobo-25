@@ -8,7 +8,8 @@
 double lowestVoltage = 0.0; //lowest cell voltage
 double highestTemp = 0.0;   // highest thermistor temperature
 double SOC = 0;             // State of Charge
-bool chargeMode;            // true means the accumulator is in charging mode
+state status = IDLE;
+bool onCharger = false;
 
 // safety loop - True means relay is closed, False means open. 
 //All of these are inputs with the exception of AMS, which is controlled by the motherboard
@@ -33,6 +34,7 @@ void moboSetup(){
     gpio_set_direction(ORION_GPIO,GPIO_MODE_INPUT);
     gpio_set_direction(HV_GPIO,GPIO_MODE_INPUT);
     gpio_set_direction(AIRN_GPIO,GPIO_MODE_INPUT);
+    gpio_set_direction(CHARGE_PIN,GPIO_MODE_INPUT);
 
     //init outputs
     gpio_set_direction(AMS_LATCH,GPIO_MODE_INPUT_OUTPUT);
@@ -51,18 +53,20 @@ void moboSetup(){
       .atten = ADC_ATTEN_DB_12,
       .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
-
+    
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,PRECHSENSE_ADC, &adc_chan_config));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config));  
-
+    
     //setup ADC Curve fitting scheme
     adc_cali_curve_fitting_config_t cali_config = {
-        .unit_id = ADC_UNIT_1,
-        .atten = ADC_ATTEN_DB_12,
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
+      .unit_id = ADC_UNIT_1,
+      .atten = ADC_ATTEN_DB_12,
+      .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
     ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle));
-
+    
+    //close AMS relay
+    gpio_set_level(AMS_LATCH,1);
     //Setup Fan control PWM
 
     ledc_timer_config_t ledc_timer = {
@@ -89,7 +93,9 @@ void moboSetup(){
 
 void inputTask(void *pvParameters){
   int adc_raw = 0;
+  int adc_reading = 0;
   int adc_voltage = 0;
+  double current = 0;
   while(1){
     //digital inputs
     imd = gpio_get_level(IMD_GPIO);
@@ -100,8 +106,17 @@ void inputTask(void *pvParameters){
     HVact = gpio_get_level(HV_GPIO);
 
     //analog inputs
+    //Multisampling
     adc_oneshot_read(adc1_handle,CURSENSE_ADC,&adc_raw);
-    setCurrent(adc_raw*CURRENT_ADC_SCALING);
+    printf(">current_adc_raw:%d\n",adc_raw);
+    adc_cali_raw_to_voltage(adc_cali_handle,adc_raw,&adc_voltage);
+    //divide by 0.6 for voltage divider to get back to 5v resolution, then subtract 2.5v and divide by 66.7 mv/A
+    printf(">current_adc_voltage:%d\n",adc_voltage);
+    current = (double)adc_voltage/0.6;
+    current -= 2500.0;
+    current /= 5.7;
+    current -= 5.26;
+    setCurrent(current);
 
     //read precharge voltage - Conversion is ~2.4mV/V, so at 60V we expect 133mV. The iso-opamp has an offset of ~725mV
     //this is honestly a pretty poor estimate of the actual voltage, but it works for our purposes
@@ -111,6 +126,7 @@ void inputTask(void *pvParameters){
     adc_voltage *= 416.6;
     prechargeVoltage = adc_voltage;
     
+    //printf("Precharge voltage: %.2f", prechargeVoltage);
     vTaskDelay(pdMS_TO_TICKS(100)); //run every 100ms
     
   }
@@ -119,15 +135,22 @@ void inputTask(void *pvParameters){
 void prechargeTask(void* pvParameters){
   int prechargeCounter = 0;
   while(1){
-    //check if safety loop is closed + precharge voltage is present for at least 600ms
-    if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD && prechargeCounter > 3){
-      gpio_set_level(PRECH_OK,1); // close AIR+
-    } else if(precharge == 1 && prechargeVoltage>PRECHARGE_THRESHOLD){
-      prechargeCounter++;
+    if(status==IDLE && precharge == true){
+      status = PRECHARGE;
     }
-    else{
-      gpio_set_level(PRECH_OK,0); // open AIR+
-      prechargeCounter = 0;
+    if(status == PRECHARGE){
+
+      if(prechargeVoltage>(getPackVoltage()*0.9) && prechargeCounter > 3){
+        gpio_set_level(PRECH_OK,1); // close AIR+
+        status = onCharger ? CHARGING : ACTIVE;
+      } 
+      else if(precharge == 1 && prechargeVoltage>(getPackVoltage()*0.9)){
+        prechargeCounter++;
+      }
+      else{
+        gpio_set_level(PRECH_OK,0); // open AIR+
+        prechargeCounter = 0;
+      }
     }
     vTaskDelay(pdMS_TO_TICKS(200));
   }
@@ -150,5 +173,32 @@ void coolingTask(void *pvParameters){
     ledc_update_duty(LEDC_LOW_SPEED_MODE,LEDC_CHANNEL_0);
 
     vTaskDelay(1000); //update once a second
+  }
+}
+
+void setStatus(state newStatus){
+  status = newStatus;
+}
+
+state getStatus(){
+  return status;
+}
+
+//print out telemetry for teleplot
+void telemetryTask(void *pvParameters){
+  while(1){
+
+    printf(">IMD Relay:%d|np\n",imd);
+    printf(">AMS Relay:%d|np\n",ams);
+    printf(">BSPD Relay:%d|np\n",bspd);
+    printf(">Latch Relay:%d|np\n",latch);
+    printf(">Sloop Return:%d|np\n",precharge);
+    printf(">HV Active:%d|np\n",HVact);
+    printf(">Status:%d|np\n",status);
+    printf(">Error:%d|np\n",getErrorFlags().errorCode);
+    printf(">Precharge_Voltage:%.2f\n",prechargeVoltage);
+    printf(">Pack_Current:%.2f\n",getPackCurrent());
+    printf(">Pack_voltage:%.2f\n",getPackVoltage());
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }

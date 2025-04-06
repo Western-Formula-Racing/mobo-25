@@ -2,50 +2,12 @@
 
 const char* TAG = "BMS";
 
-errorFlags errors; 
+errorFlags errors;            //error state tracking
+double packCurrent = 0.0;     //amps from current sensor
+uint32_t canTime[5] = {0,0,0,0,0};         //time since last BMS data message, in ms
+Module modules[5] = {};       //module voltages and temps
 
-double packCurrent = 0.0;
-
-uint32_t canTime = 0;
-
-Module modules[5] = {};
-
-void setErrorFlags(errorFlags newError){
-  errors = newError;
-}
-
-errorFlags getErrorFlags(){
-  return errors;
-}
-
-void errorCheckTask(void *pvParameters){
-  //3 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
-  vTaskDelay(pdMS_TO_TICKS(3000));
-  while(1){
-    //Check CAN error struct for errors:
-    if(errors.errored == true){
-      raiseError();
-    }
-    
-    //check CAN timeout
-    if(BMS_CAN_TIMEOUT_ENABLED && canTime > TEMP_VOLTAGE_TIMEOUT_MS ){
-      errors.errored = true;
-      errors.errorCode = 82;
-      errors.timeoutTime = canTime;
-      raiseError();
-    }
-    //check overcurrent
-    if(packCurrent>THRESHOLD_OVERCURRENT || packCurrent<THRESHOLD_CHARGECURRENT){
-      errors.errored = true;
-      errors.errorCode = 83;
-      errors.timeoutCurrent = packCurrent;
-      raiseError();
-    }
-
-    vTaskDelay(pdMS_TO_TICKS(100));
-  }
-
-};
+// functions used for CAN input (setters):
 
 void setModuleVoltage(int module, int cell, double newVoltage){
   modules[module].voltage[cell] = newVoltage;
@@ -55,38 +17,17 @@ void setModuleTemp(int module, int thermistor, double newTemp){
   modules[module].temp[thermistor] = newTemp;
 };
 
-void updateCanTimeout(int time){
-  canTime = time;
+void updateCanTimeout(int index, uint32_t time){
+  canTime[index] = time;
 }
+
+// functions used for other input:
 
 void setCurrent(double current){
   packCurrent = current;
 }
 
-void printModules(){
-  printf("===Module Info===\n");
-  printf("   Module 1 --- Cells        Module 2 --- Cells        Module 3 --- Cells        Module 4 --- Cells        Module 5 --- Cells     \n");
-  for(int k=0;k<5;k++){
-    for(int j=0; j<5;j++){
-      for(int i =0;i<4;i++){
-        printf("|%.3f",modules[j].voltage[i+k*4]);
-      }
-      printf("| ");
-    }
-    printf("\n");
-  }
-  printf("   Module 1 --- Temp        Module 2 --- Temp        Module 3 --- Temp        Module 4 --- Temp        Module 5 --- Temp     \n");
-  for(int k=0;k<5;k++){
-    for(int j=0; j<5;j++){
-      for(int i =0;i<4;i++){
-        if(i+k*4<18){
-          printf("|%.3f",modules[j].temp[i+k*4]);
-        } else{printf("|x.xxx");}
-      }
-      printf("| ");
-    }
-  }
-};
+// Error tracking and raising:
 
 void raiseError(){
   gpio_set_level(GPIO_NUM_9,0);
@@ -135,15 +76,57 @@ void raiseError(){
     case 82:
       ESP_LOGE(TAG,"Error: LTC6813 CRC Fail");
       break;
-    case 83:
+    case 84:
       ESP_LOGE(TAG,"Error: Overcurrent: %.2f A",errors.timeoutCurrent);
       break;
-    case 84:
-      ESP_LOGE(TAG,"Error: Can Timeout: %d ms",errors.timeoutTime);
+    case 83:
+      ESP_LOGE(TAG,"Error: Can Timeout from module: %d",errors.moduleNumber);
+      break;
+    case 85:
+      ESP_LOGE(TAG, "Error: Canbus Disconnected");
       break;
     }
     vTaskDelay(pdMS_TO_TICKS(100));
   }
+}
+
+void setErrorFlags(errorFlags newError){
+  errors = newError;
+}
+
+errorFlags getErrorFlags(){
+  return errors;
+}
+
+void errorCheckTask(void *pvParameters){
+  //3 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
+  vTaskDelay(pdMS_TO_TICKS(3000));
+
+  while(1){
+    //Check error struct for errors from elsewhere (BMS CAN message, etc):
+    if(errors.errored == true){
+      raiseError();
+    }
+  
+    //check overcurrent
+    if(packCurrent>THRESHOLD_OVERCURRENT || packCurrent<THRESHOLD_CHARGECURRENT){
+      errors.errored = true;
+      errors.errorCode = 84;
+      errors.timeoutCurrent = packCurrent;
+      raiseError();
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+};
+
+// info for other functions
+
+double getPackCurrent(){
+  return packCurrent;
+}
+
+double getSOC(){
+  return 80.45;
 }
 
 double getMaxTemp(){
@@ -155,4 +138,42 @@ double getMaxTemp(){
     }
   }
   return max;
+}
+
+double getPackVoltage(){
+  double voltage = 0;
+  for(int i =0;i<5;i++){
+    for(int j = 0;j<20;j++){
+      voltage += modules[i].voltage[j];
+    }
+  }
+  return voltage;
+}
+
+//serial debugging
+
+void printModules(){
+  printf("===Module Info===\n");
+  printf("   Module 1 --- Cells        Module 2 --- Cells        Module 3 --- Cells        Module 4 --- Cells        Module 5 --- Cells     \n");
+  for(int k=0;k<5;k++){
+    for(int j=0; j<5;j++){
+      for(int i =0;i<4;i++){
+        printf("|%.3f",modules[j].voltage[i+k*4]);
+      }
+      printf("| ");
+    }
+    printf("\n");
+  }
+  printf("   Module 1 --- Temp        Module 2 --- Temp        Module 3 --- Temp        Module 4 --- Temp        Module 5 --- Temp     \n");
+  for(int k=0;k<5;k++){
+    for(int j=0; j<5;j++){
+      for(int i =0;i<4;i++){
+        if(i+k*4<18){
+          printf("|%.3f",modules[j].temp[i+k*4]);
+        } else{printf("|x.xxx");}
+      }
+      printf("| ");
+    }
+    printf("\n");
+  }
 }
