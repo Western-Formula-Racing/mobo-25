@@ -1,6 +1,6 @@
 #include "moboTasks.h"
 
-//static const char *TAG = "Tasks";
+static const char *TAG = "Tasks";
 
 //system variables
 
@@ -9,7 +9,6 @@ double lowestVoltage = 0.0; //lowest cell voltage
 double highestTemp = 0.0;   // highest thermistor temperature
 double SOC = 0;             // State of Charge
 state status = IDLE;
-bool onCharger = false;
 
 // safety loop - True means relay is closed, False means open. 
 //All of these are inputs with the exception of AMS, which is controlled by the motherboard
@@ -126,6 +125,14 @@ void inputTask(void *pvParameters){
     adc_voltage *= 416.6;
     prechargeVoltage = adc_voltage;
     
+    if(gpio_get_level(CHARGE_PIN) == 0 && getStatus() == ACTIVE){
+      setStatus(CHARGING);
+    }
+    else if(getStatus()==CHARGING && gpio_get_level(CHARGE_PIN) == 1){
+      setStatus(ACTIVE);
+      elconControl(0,0,0);
+    }
+
     //printf("Precharge voltage: %.2f", prechargeVoltage);
     vTaskDelay(pdMS_TO_TICKS(100)); //run every 100ms
     
@@ -142,14 +149,28 @@ void prechargeTask(void* pvParameters){
 
       if(prechargeVoltage>(getPackVoltage()*0.9) && prechargeCounter > 3){
         gpio_set_level(PRECH_OK,1); // close AIR+
-        status = onCharger ? CHARGING : ACTIVE;
+        status = ACTIVE;
       } 
       else if(precharge == 1 && prechargeVoltage>(getPackVoltage()*0.9)){
         prechargeCounter++;
+        vTaskDelay(pdMS_TO_TICKS(50));
       }
       else{
         gpio_set_level(PRECH_OK,0); // open AIR+
         prechargeCounter = 0;
+      }
+    }
+
+    if(status == CHARGING){
+      elconControl(MAX_CHARGE*100,5.0,1);
+      if(getMaxVoltage()>MAX_CHARGE){
+
+        ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
+        for(int i = 0; i<10;i++){
+          ESP_LOGI(TAG,"%d seconds...",i);
+          vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+        ESP_LOGE(TAG,"Lowest Voltage: %.3f",getMinVoltage());
       }
     }
     vTaskDelay(pdMS_TO_TICKS(200));

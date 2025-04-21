@@ -75,6 +75,8 @@ double getPackCurrent();
 double getMaxTemp();
 double getSOC();
 double getPackVoltage();
+double getMaxVoltage();
+double getMinVoltage();
 
 //serial debugging
 void printModules();

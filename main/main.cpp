@@ -40,6 +40,7 @@ extern "C" void app_main(void)
   xTaskCreatePinnedToCore(telemetryTask,"telemetryTask",4096,NULL,configMAX_PRIORITIES-10,NULL,1);
 
   while(1){
+    printModules();
     if(getErrorFlags().errored == 0){
         ESP_LOGI(TAG,"heartbeat.\n"); 
       }

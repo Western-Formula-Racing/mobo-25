@@ -10,7 +10,7 @@
 #include "freertos/queue.h"
 #include "BMS.h"
 
-#define CAN_TIMEOUT 10000 // milliseconds
+#define CAN_TIMEOUT 100000 // milliseconds
 
 class CAN{
   public:
@@ -27,5 +27,8 @@ class CAN{
 };
 
 void canAlertTask(void *pvParameters);
+void elconControl(double maxVoltage, double maxCurrent, bool enable);
+void balanceMessage();
+
 
 #endif

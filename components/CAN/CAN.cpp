@@ -9,7 +9,7 @@ uint32_t alerts_to_enable = TWAI_ALERT_ABOVE_ERR_WARN|TWAI_ALERT_ERR_ACTIVE|TWAI
 twai_message_t txMessage = {
 
   // Message type and format settings
-  .extd = 1,              // Standard vs extended format
+  .extd = 0,              // Standard vs extended format
   .rtr = 0,               // Data vs RTR frame
   .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
   .self = 0,              // Whether the message is a self reception request (loopback)
@@ -31,25 +31,6 @@ CAN::CAN(gpio_num_t rxpin, gpio_num_t txpin){
   twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
   
   ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-  
-  //if on charger, send charge status to BMS then switch to 250kbps
-  if (gpio_get_level(CHARGE_PIN) == 0){
-    txMessage.identifier = 1056;
-    txMessage.data[0] = 0;
-    txMessage.data[1] = 0;
-    txMessage.data[2] = 0;
-    txMessage.data[3] = 0;
-    txMessage.data[4] = 0;
-    txMessage.data[5] = 3; // charging status bit 
-    txMessage.data[6] = 0;
-    txMessage.data[7] = 0;
-    twai_transmit(&txMessage,portMAX_DELAY);
-    twai_driver_uninstall();
-    ESP_LOGI(TAG,"Entering Charge Mode...");
-    t_config = TWAI_TIMING_CONFIG_250KBITS();
-    ESP_ERROR_CHECK(twai_driver_install(&g_config,&t_config,&f_config));
-  }
-
   ESP_ERROR_CHECK(twai_reconfigure_alerts(alerts_to_enable,NULL));
 
   
@@ -106,6 +87,7 @@ void CAN::txCallback(){
     //100ms messages:
     txMessage.identifier = 1056;
     int16_t current = (int16_t)getPackCurrent()*10;
+    current -= 3276;
     txMessage.data[0] = (uint8_t)(current & 0x0F);
     txMessage.data[1] = (uint8_t)(current & 0xF0)>>8;
     bool imd = gpio_get_level(IMD_GPIO);
@@ -119,7 +101,8 @@ void CAN::txCallback(){
     txMessage.data[3] = (uint8_t)SOC & 0x0F;
     txMessage.data[4] = (uint8_t)(SOC & 0xF0)>>8;
     txMessage.data[5] = getStatus();
-    txMessage.data[5] = getErrorFlags().errorCode;
+    txMessage.data[6] = getErrorFlags().errorCode;
+    txMessage.data[7] = 0;
 
     twai_transmit(&txMessage,portMAX_DELAY);
   }
@@ -219,4 +202,31 @@ void canAlertTask(void *pvParameters){
     }
     vTaskDelay(pdMS_TO_TICKS(100));
   }
+}
+
+void elconControl(double maxVoltage, double maxCurrent, bool enable){
+  txMessage.extd = 1;
+  txMessage.identifier = 403105268;
+  uint16_t voltage = (maxVoltage*10);
+  uint16_t current = (maxCurrent*10);
+
+  txMessage.data[0] = (uint8_t)(voltage & 0x0F);
+  txMessage.data[1] = (uint8_t)(voltage & 0xF0)>>8;
+  txMessage.data[2] = (uint8_t)(current & 0x0F);
+  txMessage.data[3] = (uint8_t)(current & 0xF0)>>8;
+  txMessage.data[4] = (!enable);
+  txMessage.data[5] = 0;
+  txMessage.data[6] = 0;
+  txMessage.data[7] = 0;
+
+  twai_transmit(&txMessage,portMAX_DELAY);
+  txMessage.extd = 0;
+}
+
+void balanceMessage(){
+  uint16_t minVoltage = getMinVoltage()*10000;
+  txMessage.identifier = 998;
+  txMessage.data[0] = (uint8_t)(minVoltage & 0x0F);
+  txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
+  twai_transmit(&txMessage,portMAX_DELAY);
 }

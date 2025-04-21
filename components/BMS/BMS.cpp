@@ -126,7 +126,7 @@ double getPackCurrent(){
 }
 
 double getSOC(){
-  return 80.45;
+  return getPackVoltage();
 }
 
 double getMaxTemp(){
@@ -150,6 +150,25 @@ double getPackVoltage(){
   return voltage;
 }
 
+double getMaxVoltage(){
+  double max = 0;
+  for(int i =0;i<5;i++){
+    for(int j = 0;j<20;j++){
+      if(modules[i].voltage[j]>max) max = modules[i].voltage[j];
+    }
+  }
+  return max;
+}
+
+double getMinVoltage(){
+  double min = 100;
+  for(int i =0;i<5;i++){
+    for(int j = 0;j<20;j++){
+      if(modules[i].voltage[j]<min) min = modules[i].voltage[j];
+    }
+  }
+  return min;
+}
 //serial debugging
 
 void printModules(){
