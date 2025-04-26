@@ -9,7 +9,6 @@
 #include "config.h"
 #include "driver/gpio.h"
 #include "BMS.h"
-#include "CAN.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
@@ -25,6 +24,7 @@ enum state{
 
 void moboSetup();
 state getStatus();
+void setStatus(state newStatus);
 void prechargeTask(void *pvParameters);
 void inputTask(void *pvParameters);
 void coolingTask(void *pvParameters);

@@ -30,21 +30,31 @@ CAN::CAN(gpio_num_t rxpin, gpio_num_t txpin){
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
   twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
   
-  ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-  ESP_ERROR_CHECK(twai_reconfigure_alerts(alerts_to_enable,NULL));
+  
+  if(gpio_get_level(CHARGE_PIN)==0){
+    ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
+    ESP_ERROR_CHECK(twai_start());
+    txMessage.data[5] = 3;
+    txMessage.identifier = 0x420;
+    for(int i=0;i<5;i++){
+      twai_transmit(&txMessage,portMAX_DELAY);
+      vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    ESP_ERROR_CHECK(twai_stop());
+  } 
+  else{
+    ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
+  }
+  printf("CAN Driver Installed\n");
 
+  ESP_ERROR_CHECK(twai_reconfigure_alerts(alerts_to_enable,NULL));
   
 }
 
 
 void CAN::begin(){
   // Start TWAI driver
-  if (twai_start() == ESP_OK) {
-    ESP_LOGI(TAG,"Driver started\n");
-  } else {
-    ESP_LOGI(TAG,"Failed to start driver\n");
-    return;
-  }
+  ESP_ERROR_CHECK(twai_start());
   TimerHandle_t tx_timer = xTimerCreate("CANtx", pdMS_TO_TICKS(10), pdTRUE, NULL, txCallbackWrapper);
 
   xTimerStart(tx_timer,0);
@@ -86,10 +96,13 @@ void CAN::txCallback(){
   if(txCallbackCounter%10 == 0){
     //100ms messages:
     txMessage.identifier = 1056;
-    int16_t current = (int16_t)getPackCurrent()*10;
-    current -= 3276;
-    txMessage.data[0] = (uint8_t)(current & 0x0F);
-    txMessage.data[1] = (uint8_t)(current & 0xF0)>>8;
+    //ESP_LOGI(TAG,"Current:%.3f\n",getPackCurrent());
+    int16_t current = (int16_t) (getPackCurrent()*10);
+    //ESP_LOGI(TAG,"Scaled Current:%d\n",current);
+    current += 3276;
+    //ESP_LOGI(TAG,"Scaled+Offset Current:%d\n",current);
+    txMessage.data[0] = (uint8_t)(current & 0xFF);
+    txMessage.data[1] = (uint8_t)(current & 0xFF00)>>8;
     bool imd = gpio_get_level(IMD_GPIO);
     bool ams = gpio_get_level(AMS_LATCH);
     bool bspd = gpio_get_level(BSPD_GPIO);
@@ -98,8 +111,8 @@ void CAN::txCallback(){
     bool HVAct = gpio_get_level(HV_GPIO);
     txMessage.data[2] = (uint8_t)(imd & (ams<<1) & (bspd<<2) & (latch<<3) & (prech_en<<4) & (HVAct<<5));
     uint16_t SOC = (uint16_t)(getSOC() * 100);
-    txMessage.data[3] = (uint8_t)SOC & 0x0F;
-    txMessage.data[4] = (uint8_t)(SOC & 0xF0)>>8;
+    txMessage.data[3] = (uint8_t)SOC & 0xFF;
+    txMessage.data[4] = (uint8_t)(SOC & 0xFF00)>>8;
     txMessage.data[5] = getStatus();
     txMessage.data[6] = getErrorFlags().errorCode;
     txMessage.data[7] = 0;
@@ -108,6 +121,26 @@ void CAN::txCallback(){
   }
 
   if(txCallbackCounter>=100){
+    
+    if(getStatus()!= CHARGING && gpio_get_level(CHARGE_PIN) == 1){
+      elconControl(0,0,0);
+    }
+    if(getStatus() == CHARGING && gpio_get_level(CHARGE_PIN) == 0){
+      if(getMaxVoltage()<MAX_CHARGE){
+        elconControl(MAX_CHARGE*100,4,1);
+      }
+      else if(getMaxVoltage() >= MAX_CHARGE){
+        vTaskDelay(pdMS_TO_TICKS(5000));  
+        ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
+        for(int i = 0; i<10;i++){
+          ESP_LOGI(TAG,"%d seconds...",i);
+          vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+        ESP_LOGE(TAG,"Lowest Voltage: %.3f",getMinVoltage());
+      }
+    }
+    
+    
     txCallbackCounter = 0;
   }
   txCallbackCounter++;
@@ -210,10 +243,10 @@ void elconControl(double maxVoltage, double maxCurrent, bool enable){
   uint16_t voltage = (maxVoltage*10);
   uint16_t current = (maxCurrent*10);
 
-  txMessage.data[0] = (uint8_t)(voltage & 0x0F);
-  txMessage.data[1] = (uint8_t)(voltage & 0xF0)>>8;
-  txMessage.data[2] = (uint8_t)(current & 0x0F);
-  txMessage.data[3] = (uint8_t)(current & 0xF0)>>8;
+  txMessage.data[0] = ((voltage & 0xFF00)>>8);
+  txMessage.data[1] = (voltage & 0xFF);
+  txMessage.data[2] = ((current & 0xFF00)>>8);
+  txMessage.data[3] = (current & 0xFF);
   txMessage.data[4] = (!enable);
   txMessage.data[5] = 0;
   txMessage.data[6] = 0;
@@ -225,7 +258,7 @@ void elconControl(double maxVoltage, double maxCurrent, bool enable){
 
 void balanceMessage(){
   uint16_t minVoltage = getMinVoltage()*10000;
-  txMessage.identifier = 998;
+  txMessage.identifier = 999;
   txMessage.data[0] = (uint8_t)(minVoltage & 0x0F);
   txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
   twai_transmit(&txMessage,portMAX_DELAY);

@@ -2,7 +2,7 @@
 
 const char* TAG = "BMS";
 
-errorFlags errors;            //error state tracking
+errorFlags errors = {};            //error state tracking
 double packCurrent = 0.0;     //amps from current sensor
 uint32_t canTime[5] = {0,0,0,0,0};         //time since last BMS data message, in ms
 Module modules[5] = {};       //module voltages and temps

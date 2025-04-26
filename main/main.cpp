@@ -37,10 +37,10 @@ extern "C" void app_main(void)
   xTaskCreatePinnedToCore(inputTask, "inputTask", 4096, NULL,configMAX_PRIORITIES-6, &inputTaskHandle, 1); //start input task
   xTaskCreatePinnedToCore(prechargeTask,"prechargeTask",2048,NULL,configMAX_PRIORITIES-6,&prechargeTaskHandle,1);
   xTaskCreatePinnedToCore(coolingTask,"coolingTask",2048,NULL,configMAX_PRIORITIES-7,&coolingTaskHandle,1);
-  xTaskCreatePinnedToCore(telemetryTask,"telemetryTask",4096,NULL,configMAX_PRIORITIES-10,NULL,1);
+  xTaskCreatePinnedToCore(telemetryTask,"telemetryTask",8192,NULL,configMAX_PRIORITIES-10,NULL,1);
 
   while(1){
-    printModules();
+
     if(getErrorFlags().errored == 0){
         ESP_LOGI(TAG,"heartbeat.\n"); 
       }

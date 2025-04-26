@@ -107,14 +107,12 @@ void inputTask(void *pvParameters){
     //analog inputs
     //Multisampling
     adc_oneshot_read(adc1_handle,CURSENSE_ADC,&adc_raw);
-    printf(">current_adc_raw:%d\n",adc_raw);
     adc_cali_raw_to_voltage(adc_cali_handle,adc_raw,&adc_voltage);
     //divide by 0.6 for voltage divider to get back to 5v resolution, then subtract 2.5v and divide by 66.7 mv/A
-    printf(">current_adc_voltage:%d\n",adc_voltage);
     current = (double)adc_voltage/0.6;
     current -= 2500.0;
     current /= 5.7;
-    current -= 5.26;
+    current -= 8.46;
     setCurrent(current);
 
     //read precharge voltage - Conversion is ~2.4mV/V, so at 60V we expect 133mV. The iso-opamp has an offset of ~725mV
@@ -127,10 +125,6 @@ void inputTask(void *pvParameters){
     
     if(gpio_get_level(CHARGE_PIN) == 0 && getStatus() == ACTIVE){
       setStatus(CHARGING);
-    }
-    else if(getStatus()==CHARGING && gpio_get_level(CHARGE_PIN) == 1){
-      setStatus(ACTIVE);
-      elconControl(0,0,0);
     }
 
     //printf("Precharge voltage: %.2f", prechargeVoltage);
@@ -158,19 +152,6 @@ void prechargeTask(void* pvParameters){
       else{
         gpio_set_level(PRECH_OK,0); // open AIR+
         prechargeCounter = 0;
-      }
-    }
-
-    if(status == CHARGING){
-      elconControl(MAX_CHARGE*100,5.0,1);
-      if(getMaxVoltage()>MAX_CHARGE){
-
-        ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
-        for(int i = 0; i<10;i++){
-          ESP_LOGI(TAG,"%d seconds...",i);
-          vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-        ESP_LOGE(TAG,"Lowest Voltage: %.3f",getMinVoltage());
       }
     }
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -207,6 +188,7 @@ state getStatus(){
 
 //print out telemetry for teleplot
 void telemetryTask(void *pvParameters){
+  int count=0;
   while(1){
 
     printf(">IMD Relay:%d|np\n",imd);
@@ -220,6 +202,14 @@ void telemetryTask(void *pvParameters){
     printf(">Precharge_Voltage:%.2f\n",prechargeVoltage);
     printf(">Pack_Current:%.2f\n",getPackCurrent());
     printf(">Pack_voltage:%.2f\n",getPackVoltage());
+    printf(">Charge Pin:%d\n",gpio_get_level(CHARGE_PIN));
+
+    count++;
+    if(count>5) {
+      printModules();
+      count=0;
+    }
+
     vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
