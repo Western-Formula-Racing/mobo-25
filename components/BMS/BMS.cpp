@@ -31,63 +31,6 @@ void setCurrent(double current){
 
 void raiseError(){
   gpio_set_level(GPIO_NUM_9,0);
-  while(1){
-    switch (errors.errorCode)
-    {
-    case 69:
-      ESP_LOGE(TAG,"Error: Thermistor %d overtemp: %.2f degC",errors.thermistorIndex,errors.thermistorTemp);
-      break;
-    case 70:
-      ESP_LOGE(TAG,"Error: Cell %d undervoltage: %.2f V",errors.cellIndex,errors.cellVoltage);
-      break;
-    case 71:
-      ESP_LOGE(TAG,"Error: Cell %d overvoltage: %.2f V",errors.cellIndex,errors.cellVoltage);
-      break;
-    case 72:
-      ESP_LOGE(TAG,"Error: Cell Imbalance >0.2V");
-      break;
-    case 73:
-      ESP_LOGE(TAG,"Error: Open Cell %d",errors.cellIndex);
-      break;
-    case 74:
-      ESP_LOGE(TAG,"Error: Open Thermistor %d",errors.thermistorIndex);
-      break;
-    case 75:
-      ESP_LOGE(TAG,"Error: LTC6813 DIAGN Fail");
-      break;
-    case 76:
-      ESP_LOGE(TAG,"Error: LTC6813 AXST Fail");
-      break;
-    case 77:
-      ESP_LOGE(TAG,"Error: LTC6813 CVST Fail");
-      break;
-    case 78:
-      ESP_LOGE(TAG,"Error: LTC6813 STATST Fail");
-      break;
-    case 79:
-      ESP_LOGE(TAG,"Error: LTC6813 ADOW Fail");
-      break;
-    case 80:
-      ESP_LOGE(TAG,"Error: LTC6813 AXOW Fail");
-      break;
-    case 81:
-      ESP_LOGE(TAG,"Error: LTC6813 ADOL Fail");
-      break;
-    case 82:
-      ESP_LOGE(TAG,"Error: LTC6813 CRC Fail");
-      break;
-    case 84:
-      ESP_LOGE(TAG,"Error: Overcurrent: %.2f A",errors.timeoutCurrent);
-      break;
-    case 83:
-      ESP_LOGE(TAG,"Error: Can Timeout from module: %d",errors.moduleNumber);
-      break;
-    case 85:
-      ESP_LOGE(TAG, "Error: Canbus Disconnected");
-      break;
-    }
-    vTaskDelay(pdMS_TO_TICKS(100));
-  }
 }
 
 void setErrorFlags(errorFlags newError){

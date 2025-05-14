@@ -1,58 +1,49 @@
-#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
-#include "CAN.h"
-#include "moboTasks.h"
-#include "BMS.h"
 #include "config.h"
+#include "esp_adc/adc_oneshot.h"
 
 
 extern "C" void app_main(void)
 {
+  //setup
 
-  static const char* TAG = "main";
+  //init inputs
+  gpio_set_direction(BSPD_GPIO,GPIO_MODE_INPUT);
+  gpio_set_direction(IMD_GPIO,GPIO_MODE_INPUT);
+  gpio_set_direction(LATCH_GPIO,GPIO_MODE_INPUT);
+  gpio_set_direction(HV_GPIO,GPIO_MODE_INPUT);
+  gpio_set_direction(AIRN_GPIO,GPIO_MODE_INPUT);
+  gpio_set_direction(CHARGE_PIN,GPIO_MODE_INPUT);
 
-  errorFlags emptyError;
-  TaskHandle_t inputTaskHandle;
-  TaskHandle_t prechargeTaskHandle;
-  TaskHandle_t coolingTaskHandle;
+  //init outputs
+  gpio_set_direction(AMS_LATCH,GPIO_MODE_INPUT_OUTPUT);
+  gpio_set_level(AMS_LATCH,1);
+  gpio_set_direction(PRECH_OK,GPIO_MODE_OUTPUT);
+  gpio_set_level(PRECH_OK,0);
 
-  printf("Starting...");
-  vTaskDelay(pdMS_TO_TICKS(3000)); // wait for serial to connect
+  //setup ADC
+  adc_oneshot_unit_init_cfg_t adcconfig = {
+    .unit_id = ADC_UNIT_1,
+    .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
+    .ulp_mode = ADC_ULP_MODE_DISABLE,
+  };
 
-  esp_log_level_set("*",ESP_LOG_INFO);
+  ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcconfig, &adc1_handle));
   
-  //setup i/o
-  moboSetup(); 
-
-  //setup CAN
-  CAN can = CAN(CANRX,CANTX);
-  can.begin();
-
-  xTaskCreatePinnedToCore(errorCheckTask,"Error Check",4096,NULL,configMAX_PRIORITIES-5,NULL,1); //start BMS task
-  xTaskCreatePinnedToCore(canAlertTask,"CAN Alerts",2048,NULL,configMAX_PRIORITIES-5,NULL,1); //start CAN Alert watchdog
-  xTaskCreatePinnedToCore(inputTask, "inputTask", 4096, NULL,configMAX_PRIORITIES-6, &inputTaskHandle, 1); //start input task
-  xTaskCreatePinnedToCore(prechargeTask,"prechargeTask",2048,NULL,configMAX_PRIORITIES-6,&prechargeTaskHandle,1);
-  xTaskCreatePinnedToCore(coolingTask,"coolingTask",2048,NULL,configMAX_PRIORITIES-7,&coolingTaskHandle,1);
-  xTaskCreatePinnedToCore(telemetryTask,"telemetryTask",8192,NULL,configMAX_PRIORITIES-10,NULL,1);
+  adc_oneshot_chan_cfg_t adc_chan_config = {
+    .atten = ADC_ATTEN_DB_12,
+    .bitwidth = ADC_BITWIDTH_DEFAULT,
+  };
+  
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,PRECHSENSE_ADC, &adc_chan_config));
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config));  
 
   while(1){
+    
 
-    if(getErrorFlags().errored == 0){
-        ESP_LOGI(TAG,"heartbeat.\n"); 
-      }
-    else{
-      vTaskDelete(inputTaskHandle);
-      vTaskDelete(prechargeTaskHandle);
-      vTaskDelete(coolingTaskHandle);
-      while(1){
-        ESP_LOGI(TAG,"heart is no longer beating...\n"); 
-        vTaskDelay(pdMS_TO_TICKS(1000));
-      }
-    }
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
