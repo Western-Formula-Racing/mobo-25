@@ -1,6 +1,6 @@
 #include "CAN.h"
 static const char *TAG = "CAN";
-
+/*
 bool module_timeout[] = {false, false, false, false, false};
 int64_t last_received[] = {0, 0, 0, 0, 0};
 
@@ -251,7 +251,7 @@ void elconControl(double maxVoltage, double maxCurrent, bool enable){
   txMessage.data[5] = 0;
   txMessage.data[6] = 0;
   txMessage.data[7] = 0;
-
+  
   twai_transmit(&txMessage,portMAX_DELAY);
   txMessage.extd = 0;
 }
@@ -263,3 +263,4 @@ void balanceMessage(){
   txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
   twai_transmit(&txMessage,portMAX_DELAY);
 }
+*/

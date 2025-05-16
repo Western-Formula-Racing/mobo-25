@@ -13,13 +13,16 @@ stateVars stateLoop(stateVars previous){
       next.previousState = IDLE;
       next.currentState = PRECHARGE_START;
     }
-    break;s
+    checkFaults(&next);
+    break;
     
     case PRECHARGE_START:
     //set start time
     next.prechargeStartTime =  pdTICKS_TO_MS(xTaskGetTickCount());
     next.previousState = PRECHARGE_START;
     next.currentState = PRECHARGE_CHECK;
+    
+    checkFaults(&next);
     break;
     
     case PRECHARGE_CHECK:
@@ -37,21 +40,38 @@ stateVars stateLoop(stateVars previous){
       next.errors.error = PRECHARGEFAIL;
     }
 
+    checkFaults(&next);
     break;
-    
+
     case ACTIVE:
+    if(gpio_get_level(CHARGE_PIN) == 0){
+      next.previousState = ACTIVE;
+      next.currentState = CHARGING;
+    }
+
+    checkFaults(&next);
     break;
     
     case CHARGING:
+    if(gpio_get_level(CHARGE_PIN) == 1){
+      next.previousState = CHARGING;
+      next.currentState = ACTIVE;
+    }
+
+    checkFaults(&next);
     break;
     
     case FAULT:
+    
+    switch (next.errors.error){
+      case OVERTEMP:
+      ESP_LOGE(TAG,"ERROR - Thermistor overtemp: %.2f");
+    }
+
     break;
   }
-
-  stateVars next = previous;
-  if(nextState==next.currentState)
-
-
   return next;
 };
+
+void checkFaults(stateVars* currentState){
+}

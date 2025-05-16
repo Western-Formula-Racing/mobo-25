@@ -63,5 +63,6 @@ struct stateVars{
 };
 
 stateVars stateLoop(stateVars prevState);
+void checkFaults(stateVars* currentState);
 
 #endif

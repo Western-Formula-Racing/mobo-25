@@ -2,118 +2,61 @@
 
 const char* TAG = "BMS";
 
-errorFlags errors = {};            //error state tracking
-double packCurrent = 0.0;     //amps from current sensor
-uint32_t canTime[5] = {0,0,0,0,0};         //time since last BMS data message, in ms
-Module modules[5] = {};       //module voltages and temps
-
-// functions used for CAN input (setters):
-
 void setModuleVoltage(int module, int cell, double newVoltage){
-  modules[module].voltage[cell] = newVoltage;
-};
+  if(module < 6 && cell <21){
+    modules[module].voltage[cell] = newVoltage;
+  } 
+  else{ESP_LOGE(TAG, "Voltage out of range!");}
+}
 
 void setModuleTemp(int module, int thermistor, double newTemp){
-  modules[module].temp[thermistor] = newTemp;
-};
-
-void updateCanTimeout(int index, uint32_t time){
-  canTime[index] = time;
+  if(module < 6 && thermistor <19){
+    modules[module].temp[thermistor] = newTemp;
+  } 
+  else{ESP_LOGE(TAG, "Temp out of range!");}
 }
 
-// functions used for other input:
-
-void setCurrent(double current){
-  packCurrent = current;
-}
-
-// Error tracking and raising:
-
-void raiseError(){
-  gpio_set_level(GPIO_NUM_9,0);
-}
-
-void setErrorFlags(errorFlags newError){
-  errors = newError;
-}
-
-errorFlags getErrorFlags(){
-  return errors;
-}
-
-void errorCheckTask(void *pvParameters){
-  //3 second delay to make sure all CAN messages have been recieved, so errors don't trigger because values haven't been populated yet.
-  vTaskDelay(pdMS_TO_TICKS(3000));
-
-  while(1){
-    //Check error struct for errors from elsewhere (BMS CAN message, etc):
-    if(errors.errored == true){
-      raiseError();
+double getPackVoltage(){
+  double total = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      total += modules[i].voltage[j];
     }
-  
-    //check overcurrent
-    if(packCurrent>THRESHOLD_OVERCURRENT || packCurrent<THRESHOLD_CHARGECURRENT){
-      errors.errored = true;
-      errors.errorCode = 84;
-      errors.timeoutCurrent = packCurrent;
-      raiseError();
-    }
-    vTaskDelay(pdMS_TO_TICKS(100));
   }
-};
-
-// info for other functions
-
-double getPackCurrent(){
-  return packCurrent;
-}
-
-double getSOC(){
-  return getPackVoltage();
+  return total;
 }
 
 double getMaxTemp(){
   double max = 0;
-  for(int i =0;i<5;i++){
-    for(int j = 0;j<18;j++){
-      if(modules[i].temp[j]>max) max = modules[i].temp[j]; 
-
+  for(int i=0;i<5;i++){
+    for(int j=0;j<18;j++){
+      if(max<modules[i].temp[j]) max = modules[i].temp[j];
     }
   }
   return max;
 }
 
-double getPackVoltage(){
-  double voltage = 0;
-  for(int i =0;i<5;i++){
-    for(int j = 0;j<20;j++){
-      voltage += modules[i].voltage[j];
-    }
-  }
-  return voltage;
-}
-
 double getMaxVoltage(){
   double max = 0;
-  for(int i =0;i<5;i++){
-    for(int j = 0;j<20;j++){
-      if(modules[i].voltage[j]>max) max = modules[i].voltage[j];
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(max<modules[i].voltage[j]) max = modules[i].voltage[j];
     }
   }
   return max;
 }
 
 double getMinVoltage(){
-  double min = 100;
-  for(int i =0;i<5;i++){
-    for(int j = 0;j<20;j++){
-      if(modules[i].voltage[j]<min) min = modules[i].voltage[j];
+  double min = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(min>modules[i].voltage[j]) min = modules[i].voltage[j];
     }
   }
   return min;
 }
-//serial debugging
 
+//serial debugging
 void printModules(){
   printf("===Module Info===\n");
   printf("   Module 1 --- Cells        Module 2 --- Cells        Module 3 --- Cells        Module 4 --- Cells        Module 5 --- Cells     \n");

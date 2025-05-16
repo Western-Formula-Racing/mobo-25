@@ -6,5 +6,4 @@
 double getPrechargeVoltage();
 
 
-
 #endif

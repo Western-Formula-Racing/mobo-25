@@ -1,5 +1,5 @@
 // Component - BMS
-// Function: Open or close AMS relay depending on BMS state
+// Function: Track BMS State
 
 #ifndef BMS_H
 #define BMS_H
@@ -17,27 +17,17 @@ struct Module{
   double temp[18];
 };
 
+Module modules[5];
+
 // functions used for CAN input (setters):
 void setModuleVoltage(int module, int cell, double newVoltage);
 void setModuleTemp(int module, int thermistor, double newTemp);
-void updateCanTimeout(int index, uint32_t time);
-
-// functions used for other input:
-void setCurrent(double current);
-
-// Error tracking and raising:
-void raiseError(); // Opens AMS relay, spits error on serial
-void setErrorFlags(errorFlags newError); //setter
-errorFlags getErrorFlags(); //getter
-void errorCheckTask(void *pvParameters); //background error detection task
 
 // info for other functions
-double getPackCurrent();
-double getMaxTemp();
-double getSOC();
-double getPackVoltage();
-double getMaxVoltage();
-double getMinVoltage();
+double getPackVoltage();  // sum of all cell voltages
+double getMaxTemp();      // maximum thermistor temperature
+double getMaxVoltage();   // maximum cell voltage
+double getMinVoltage();   // minimum cell voltage
 
 //serial debugging
 void printModules();

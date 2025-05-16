@@ -25,6 +25,8 @@ extern "C" void app_main(void)
   gpio_set_level(PRECH_OK,0);
 
   //setup ADC
+  adc_oneshot_unit_handle_t adc1_handle;
+
   adc_oneshot_unit_init_cfg_t adcconfig = {
     .unit_id = ADC_UNIT_1,
     .clk_src = ADC_RTC_CLK_SRC_DEFAULT,
@@ -42,8 +44,7 @@ extern "C" void app_main(void)
   ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config));  
 
   while(1){
-    
-
+    printf("I AM ALIVE\n");
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
