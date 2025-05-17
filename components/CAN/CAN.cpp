@@ -1,108 +1,60 @@
 #include "CAN.h"
 static const char *TAG = "CAN";
-/*
-bool module_timeout[] = {false, false, false, false, false};
-int64_t last_received[] = {0, 0, 0, 0, 0};
 
 uint32_t alerts_to_enable = TWAI_ALERT_ABOVE_ERR_WARN|TWAI_ALERT_ERR_ACTIVE|TWAI_ALERT_RX_QUEUE_FULL;
+int txCounter = 0;
+twai_status_info_t twai_status;
+
+extern int32_t moduleTime[5] = {0,0,0,0,0};
 
 twai_message_t txMessage = {
 
   // Message type and format settings
-  .extd = 0,              // Standard vs extended format
-  .rtr = 0,               // Data vs RTR frame
-  .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
-  .self = 0,              // Whether the message is a self reception request (loopback)
-  .dlc_non_comp = 0,      // DLC is less than 8
-  
+    .extd = 0,              // Standard vs extended format
+    .rtr = 0,               // Data vs RTR frame
+    .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
+    .self = 0,              // Whether the message is a self reception request (loopback)
+    .dlc_non_comp = 0,      // DLC is less than 8
   // Message ID and payload
   .identifier = 1056,
   .data_length_code = 8,
   .data = {0,0,0,0,0,0,0,0},
 };
 
-
-
 // can instatiation
-CAN::CAN(gpio_num_t rxpin, gpio_num_t txpin){
+
+void CANbegin(gpio_num_t rxpin, gpio_num_t txpin){
 
   twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(txpin,rxpin,TWAI_MODE_NORMAL);
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
   twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
   
-  
-  if(gpio_get_level(CHARGE_PIN)==0){
-    ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-    ESP_ERROR_CHECK(twai_start());
-    txMessage.data[5] = 3;
-    txMessage.identifier = 0x420;
-    for(int i=0;i<5;i++){
-      twai_transmit(&txMessage,portMAX_DELAY);
-      vTaskDelay(pdMS_TO_TICKS(50));
-    }
-    ESP_ERROR_CHECK(twai_stop());
-  } 
-  else{
-    ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
-  }
-  printf("CAN Driver Installed\n");
-
+  ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
+  ESP_LOGI(TAG, "CAN Driver Installed\n");
   ESP_ERROR_CHECK(twai_reconfigure_alerts(alerts_to_enable,NULL));
-  
-}
-
-
-void CAN::begin(){
   // Start TWAI driver
   ESP_ERROR_CHECK(twai_start());
-  TimerHandle_t tx_timer = xTimerCreate("CANtx", pdMS_TO_TICKS(10), pdTRUE, NULL, txCallbackWrapper);
-
+  //Start TX task
+  TimerHandle_t tx_timer = xTimerCreate("CANtx", pdMS_TO_TICKS(10), pdTRUE, NULL, txTask);
   xTimerStart(tx_timer,0);
-  xTaskCreatePinnedToCore(rxTaskWrapper, "CAN_rx", 4096, this, 5, nullptr, 1);
-  xTaskCreatePinnedToCore(timeoutHandler, "timeoutHandler", 4096, this, 5, nullptr, 1);
+  //Start RX task
+  xTaskCreatePinnedToCore(rxTask, "CAN_rx", 4096, NULL, 5, nullptr, 1);
+  //xTaskCreatePinnedToCore(timeoutHandler, "timeoutHandler", 4096, NULL, 5, nullptr, 1);
 }
 
-void CAN::timeoutHandler(void* arg)
-{
-  for(;;){
-    for(uint8_t i = 0; i<= 4; i++){
-      int64_t current_time = xTaskGetTickCount() * (1000/configTICK_RATE_HZ);
-      printf(">current_time:%lld\n", current_time);
-      printf(">last_received[%d]:%lld\n", i, last_received[i]);
-      printf(">(current_time - last_received[i]):%lld\n", (current_time - last_received[i]));
-      if((current_time - last_received[i]) >= CAN_TIMEOUT ){
-        errorFlags error = {true, i, 83};
-        setErrorFlags(error);
-        printf("timeout error on module %d\n", i);
-        // raiseError();
-
-      }
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-}
-
-void CAN::txCallbackWrapper(TimerHandle_t xTimer)
-{
-    CAN *instance = static_cast<CAN *>(static_cast<void *>(xTimer));
-    instance->txCallback();
-}
-
-void CAN::txCallback(){
+void txTask(TimerHandle_t xTimer){
   //this function gets called every 10 milliseconds
 
   //10ms messages:
 
-  if(txCallbackCounter%10 == 0){
+  if(txCounter%10 == 0){
     //100ms messages:
     txMessage.identifier = 1056;
-    //ESP_LOGI(TAG,"Current:%.3f\n",getPackCurrent());
     int16_t current = (int16_t) (getPackCurrent()*10);
-    //ESP_LOGI(TAG,"Scaled Current:%d\n",current);
-    current += 3276;
-    //ESP_LOGI(TAG,"Scaled+Offset Current:%d\n",current);
-    txMessage.data[0] = (uint8_t)(current & 0xFF);
-    txMessage.data[1] = (uint8_t)(current & 0xFF00)>>8;
+    //printf("Scaled pack current:%d",current);
+    current += 32760;
+    txMessage.data[0] = (current & 0xFF);
+    txMessage.data[1] = (current & 0xFF00)>>8;
     bool imd = gpio_get_level(IMD_GPIO);
     bool ams = gpio_get_level(AMS_LATCH);
     bool bspd = gpio_get_level(BSPD_GPIO);
@@ -114,50 +66,31 @@ void CAN::txCallback(){
     txMessage.data[3] = (uint8_t)SOC & 0xFF;
     txMessage.data[4] = (uint8_t)(SOC & 0xFF00)>>8;
     txMessage.data[5] = getStatus();
-    txMessage.data[6] = getErrorFlags().errorCode;
+    txMessage.data[6] = getErrorCode();
     txMessage.data[7] = 0;
 
     twai_transmit(&txMessage,portMAX_DELAY);
   }
 
-  if(txCallbackCounter>=100){
-    
-    if(getStatus()!= CHARGING && gpio_get_level(CHARGE_PIN) == 1){
+  if(txCounter>=100){
+    //1s messages
+    if(getStatus() != CHARGING){
       elconControl(0,0,0);
     }
-    if(getStatus() == CHARGING && gpio_get_level(CHARGE_PIN) == 0){
-      if(getMaxVoltage()<MAX_CHARGE){
-        elconControl(MAX_CHARGE*100,4,1);
-      }
-      else if(getMaxVoltage() >= MAX_CHARGE){
-        vTaskDelay(pdMS_TO_TICKS(5000));  
-        ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
-        for(int i = 0; i<10;i++){
-          ESP_LOGI(TAG,"%d seconds...",i);
-          vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-        ESP_LOGE(TAG,"Lowest Voltage: %.3f",getMinVoltage());
-      }
+    else if(getStatus() == CHARGING){
+      elconControl(MAX_CHARGE*100,CHARGE_CURRENT,1);
     }
-    
-    
-    txCallbackCounter = 0;
+    txCounter = 0;
   }
-  txCallbackCounter++;
+  txCounter++;
 }
 
-void CAN::rxTaskWrapper(void *arg)
-{
-    CAN *instance = static_cast<CAN *>(static_cast<void *>(arg));
-    instance->rxTask();
-}
-
-void CAN::rxTask(){
+void rxTask(void *arg){
   // create generic message
   twai_message_t rx_msg;
   ESP_LOGI(TAG,"Rx Task Started");
   while(1){
-    // wait until a message is recieved (up to 2 seconds).
+    // wait until a message is recieved
     if(twai_receive(&rx_msg,portMAX_DELAY) == ESP_OK){
 
       //ESP_LOGI(TAG,"Message recieved with ID: %ld", rx_msg.identifier);
@@ -175,8 +108,7 @@ void CAN::rxTask(){
         setModuleVoltage(module,cell++,s2);
         setModuleVoltage(module,cell++,s3);
         setModuleVoltage(module,cell++,s4);
-        //update last received for timeout
-        last_received[module] = xTaskGetTickCount() * (1000/configTICK_RATE_HZ); // time in milliseconds
+        moduleTime[module] = pdTICKS_TO_MS(xTaskGetTickCount());
       }
       //Module Temperatures
       else if(rx_msg.identifier >= 1031 && rx_msg.identifier <= 1055){
@@ -196,8 +128,8 @@ void CAN::rxTask(){
           setModuleTemp(module,cell++,s4);
         }
         //update last received for timeout
-        last_received[module] = xTaskGetTickCount() * (1000/configTICK_RATE_HZ); // time in milliseconds
       }
+      /*
       else if(rx_msg.identifier == 1000){
         //Error message!
         uint8_t module_id = rx_msg.data[0];
@@ -206,34 +138,10 @@ void CAN::rxTask(){
         uint8_t voltageIndex = rx_msg.data[4];
         double temperature = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.01;
         uint8_t tempIndex = rx_msg.data[7];
-        errorFlags newError = {
-          .errored = true,
-          .moduleNumber = module_id,
-          .errorCode = errorcode,
-          .cellVoltage = voltage,
-          .cellIndex = voltageIndex,
-          .thermistorTemp = temperature,
-          .thermistorIndex = tempIndex
-        };
-        setErrorFlags(newError);
+        raiseCANError(newError);
       }
+      */
     }
-  }
-}
-
-void canAlertTask(void *pvParameters){
-  uint32_t alerts_triggered;
-  errorFlags newError;
-  while(1){
-    twai_read_alerts(&alerts_triggered, portMAX_DELAY);
-    if(alerts_triggered!=TWAI_ALERT_NONE){
-      newError= {
-        .errored = true,
-        .errorCode = 85
-      };
-      // setErrorFlags(newError);
-    }
-    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -263,4 +171,20 @@ void balanceMessage(){
   txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
   twai_transmit(&txMessage,portMAX_DELAY);
 }
-*/
+
+int32_t getMaxCanTimeout(){
+  int32_t timeout = 0;
+  for(int i =0;i<5;i++){
+    if(pdTICKS_TO_MS(xTaskGetTickCount())-moduleTime[i]>timeout){
+      //printf("Module %d time: %ld",i,moduleTime[i]);
+      timeout = pdTICKS_TO_MS(xTaskGetTickCount())-moduleTime[i];
+    }
+  }
+  //printf("Current task time: %ld\n",pdTICKS_TO_MS(xTaskGetTickCount()));
+  return timeout;
+};
+
+uint32_t getCANErrorCount(){
+  twai_get_status_info(&twai_status);
+  return twai_status.bus_error_count;
+}

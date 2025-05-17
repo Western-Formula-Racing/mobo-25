@@ -13,6 +13,8 @@
 #define AMS_LATCH          GPIO_NUM_9    //AMS Latch output pin
 #define PRECH_OK           GPIO_NUM_36   //Precharge OK output pin
 #define FAN_PWM_PIN        GPIO_NUM_8    // Fan PWM pin
+#define STATUS_LED         GPIO_NUM_16   // Green LED
+#define FAULT_LED          GPIO_NUM_15   // Red LED
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
@@ -24,5 +26,21 @@
 #define IO_4_5V            GPIO_NUM_8    //5VIO 1
 
 //BMS
+#define MAX_CHARGE         3.9    //max cell voltage to charge to
+#define CHARGE_CURRENT     4      //max charge current in amps 
+
+//CAN
+#define CAN_TIMEOUT 10000 // milliseconds
+
+//Error thresholds
+#define THRESHOLD_OVERTEMP      60
+#define THRESHOLD_OVERVOLTAGE   4.25
+#define THRESHOLD_UNDERVOLTAGE  0   //3.2
+#define THRESHOLD_MAXDELTA      0.2
+#define THRESHOLD_OVERCURRENT   100
+#define THRESHOLD_CANTIMEOUT    10000 //milliseconds
+
+//telemetry enable
+#define TELEMETRY true
 
 #endif

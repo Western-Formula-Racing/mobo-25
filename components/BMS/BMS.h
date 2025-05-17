@@ -1,6 +1,5 @@
 // Component - BMS
 // Function: Track BMS State
-
 #ifndef BMS_H
 #define BMS_H
 
@@ -16,8 +15,6 @@ struct Module{
   double voltage[20];
   double temp[18];
 };
-
-Module modules[5];
 
 // functions used for CAN input (setters):
 void setModuleVoltage(int module, int cell, double newVoltage);

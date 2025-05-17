@@ -2,6 +2,8 @@
 
 const char* TAG = "BMS";
 
+Module modules[5];
+
 void setModuleVoltage(int module, int cell, double newVoltage){
   if(module < 6 && cell <21){
     modules[module].voltage[cell] = newVoltage;
@@ -47,7 +49,7 @@ double getMaxVoltage(){
 }
 
 double getMinVoltage(){
-  double min = 0;
+  double min = 100;
   for(int i=0;i<5;i++){
     for(int j=0;j<20;j++){
       if(min>modules[i].voltage[j]) min = modules[i].voltage[j];

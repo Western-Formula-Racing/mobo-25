@@ -1,1 +1,1 @@
-idf_component_register(SRCS "utils.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "esp_adc")
+idf_component_register(SRCS "utils.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "esp_adc" "statemachine" "CAN")

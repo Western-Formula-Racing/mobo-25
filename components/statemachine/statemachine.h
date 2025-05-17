@@ -7,9 +7,7 @@
 #include "config.h"
 #include "BMS.h"
 #include "utils.h"
-
-
-
+#include "CAN.h"
 
 enum errorCode{
   NONE = 0,
@@ -41,7 +39,8 @@ struct errorFlags{
   uint8_t cellIndex = 0;          //cell number
   double thermistorTemp = 0;      //thermistor temperature value
   uint8_t thermistorIndex = 0;    //thermistor number
-  int timeoutTime = 0;            //CAN timeout period
+  int32_t timeoutTime = 0;            //CAN timeout period
+  int timeoutModule = -1;
   double timeoutCurrent = 0;      //current at fault time
 };
 
@@ -51,6 +50,7 @@ enum state{
   PRECHARGE_CHECK,  //Precharge check
   ACTIVE,           //HV Active
   CHARGING,  
+  CHARGE_COMPLETE,
   FAULT
 };
 
@@ -62,7 +62,11 @@ struct stateVars{
   errorFlags errors;
 };
 
-stateVars stateLoop(stateVars prevState);
-void checkFaults(stateVars* currentState);
+void stateLoop();
+void checkFaults();
+state getStatus();
+errorCode getErrorCode();
+void printFault(errorFlags errorflags);
+void raiseError(errorFlags error);
 
 #endif
