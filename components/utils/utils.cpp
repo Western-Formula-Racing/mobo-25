@@ -26,8 +26,13 @@ double getPrechargeVoltage(){
   //24v = 1.33V out of the iso op-amp,
   //1V at HV = 0.00395833V at LV side
   //252.6315 V(HV)/V(LV)
-  int raw;
-  adc_oneshot_read(adc1_handle,PRECHSENSE_ADC,&raw);
+  int raw = 0;
+  int raw_total = 0;
+  for(int i = 0;i<ADC_SAMPLES;i++){
+    adc_oneshot_read(adc1_handle,CURSENSE_ADC,&raw);
+    raw_total += raw;
+  }
+  raw = raw_total/ADC_SAMPLES;
   //printf("ADC raw reading: %d\n", raw);
   double voltage_mv = (double)raw / 4095.0 * 3.3;
   //printf("ADC Voltage reading: %.2f\n",voltage_mv);
@@ -42,8 +47,13 @@ double getSOC(){
 }
 
 double getPackCurrent(){
-  int raw;
-  adc_oneshot_read(adc1_handle,CURSENSE_ADC,&raw);
+  int raw = 0;
+  int raw_total = 0;
+  for(int i = 0;i<ADC_SAMPLES;i++){
+    adc_oneshot_read(adc1_handle,CURSENSE_ADC,&raw);
+    raw_total += raw;
+  }
+  raw = raw_total/ADC_SAMPLES;
   //printf("ADC raw reading: %d\n", raw);
   double voltage_mv = (double)raw / 4095.0 * 3.3;
   voltage_mv -= 2.5;

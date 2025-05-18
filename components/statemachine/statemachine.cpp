@@ -73,7 +73,6 @@ void stateLoop(void){
     if(getMaxVoltage() >= MAX_CHARGE){
       stateVariables.previousState = CHARGING;
       stateVariables.currentState = CHARGE_COMPLETE;
-      vTaskDelay(pdMS_TO_TICKS(5000));  
       ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
       for(int i = 0; i<10;i++){
         ESP_LOGI(TAG,"%d seconds...",i);

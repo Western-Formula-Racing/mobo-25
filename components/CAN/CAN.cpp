@@ -74,14 +74,23 @@ void txTask(TimerHandle_t xTimer){
 
   if(txCounter>=100){
     //1s messages
-    /*
     if(getStatus() != CHARGING){
       elconControl(0,0,0);
     }
     else if(getStatus() == CHARGING){
       elconControl(MAX_CHARGE*100,CHARGE_CURRENT,1);
     }
-    */
+    else if(getStatus() == CHARGE_COMPLETE){
+      
+      txMessage.data[0] = (int16_t)(getMinVoltage()*10000) & 0xFF;
+      txMessage.data[1] = ((int16_t)(getMinVoltage()*10000) & 0x00FF)>>8;
+      txMessage.data[2] = 0;
+      txMessage.data[3] = 0;
+      txMessage.data[4] = 0;
+      txMessage.data[5] = 0;
+      txMessage.data[6] = 0;
+      txMessage.data[7] = 0;
+    }
     txCounter = 0;
   }
   txCounter++;

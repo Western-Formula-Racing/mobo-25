@@ -27,7 +27,7 @@
 
 //BMS
 #define MAX_CHARGE         3.9    //max cell voltage to charge to
-#define CHARGE_CURRENT     4      //max charge current in amps 
+#define CHARGE_CURRENT     5      //max charge current in amps 
 
 //CAN
 #define CAN_TIMEOUT 100000 // Allowable CAN Errors
@@ -35,10 +35,10 @@
 //Error thresholds
 #define THRESHOLD_OVERTEMP      60
 #define THRESHOLD_OVERVOLTAGE   4.25
-#define THRESHOLD_UNDERVOLTAGE  0   //3.2
+#define THRESHOLD_UNDERVOLTAGE  3.2   //3.2
 #define THRESHOLD_MAXDELTA      0.2
 #define THRESHOLD_OVERCURRENT   100
-#define THRESHOLD_CANTIMEOUT    100000 //milliseconds
+#define THRESHOLD_CANTIMEOUT    20000 //milliseconds
 
 //telemetry enable
 #define TELEMETRY true
