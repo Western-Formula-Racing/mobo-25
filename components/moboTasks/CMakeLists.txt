@@ -1,1 +1,0 @@
-idf_component_register(SRCS "moboTasks.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "BMS" "esp_adc")

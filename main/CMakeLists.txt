@@ -1,1 +1,1 @@
-idf_component_register(SRCS "main.cpp" INCLUDE_DIRS "." "../components" "../include" REQUIRES "CAN" "moboTasks" "BMS")
+idf_component_register(SRCS "main.cpp" INCLUDE_DIRS "." "../components" "../include" REQUIRES "CAN" "utils" "statemachine" "BMS" "esp_adc")

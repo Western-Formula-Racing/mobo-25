@@ -4,33 +4,43 @@
 #define BSPD_GPIO          GPIO_NUM_37   //BSPD Status Input pin
 #define IMD_GPIO           GPIO_NUM_39   //IMD Status Input pin
 #define LATCH_GPIO         GPIO_NUM_40   //Latch Status Input pin
-#define ORION_GPIO         GPIO_NUM_5    //Orion Status (if orion is used)
 #define HV_GPIO            GPIO_NUM_10   //HV Status (AIR+ on)
 #define AIRN_GPIO          GPIO_NUM_11   //AIR- Status
 #define CANTX              GPIO_NUM_47   //CANTX pin
 #define CANRX              GPIO_NUM_48   //CANRX pin
-#define CHARGE_PIN         GPIO_NUM_17   //if pulled down, accumulator is in chargecart
+#define CHARGE_PIN         GPIO_NUM_42   //if pulled down, accumulator is in chargecart
 //digital outputs
 #define AMS_LATCH          GPIO_NUM_9    //AMS Latch output pin
 #define PRECH_OK           GPIO_NUM_36   //Precharge OK output pin
 #define FAN_PWM_PIN        GPIO_NUM_8    // Fan PWM pin
+#define STATUS_LED         GPIO_NUM_16   // Green LED
+#define FAULT_LED          GPIO_NUM_15   // Red LED
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
-#define IMD_PWM            GPIO_NUM_12      //IMD Fault PWM Input
 #define ADC_SAMPLES        10
+//5V IO pins
+#define IO_1_5V            GPIO_NUM_5    //5VIO 1
+#define IO_2_5V            GPIO_NUM_17   //5VIO 1
+#define IO_3_5V            GPIO_NUM_18   //5VIO 1
+#define IO_4_5V            GPIO_NUM_8    //5VIO 1
+
 //BMS
+#define MAX_CHARGE         3.9    //max cell voltage to charge to
+#define CHARGE_CURRENT     4      //max charge current in amps 
 
-#define BMS_CAN_TIMEOUT_ENABLED false
-#define THRESHOLD_OVERVOLTAGE 4.3
-#define THRESHOLD_UNDERVOLTAGE 2.7
-#define THRESHOLD_OVERTEMP 60
-#define TEMP_VOLTAGE_TIMEOUT_MS 2000
-#define THRESHOLD_OVERCURRENT 100000
-#define THRESHOLD_CHARGECURRENT -500000
+//CAN
+#define CAN_TIMEOUT 10000 // milliseconds
 
-#define MAX_CHARGE 3.9
-#define MAX_FAN_POWER 0.5 // Fan power cap as a ratio, max 1
-#define PRECHARGE_OFFSET_MV 725
+//Error thresholds
+#define THRESHOLD_OVERTEMP      60
+#define THRESHOLD_OVERVOLTAGE   4.25
+#define THRESHOLD_UNDERVOLTAGE  0   //3.2
+#define THRESHOLD_MAXDELTA      0.2
+#define THRESHOLD_OVERCURRENT   100
+#define THRESHOLD_CANTIMEOUT    22000 //milliseconds
+
+//telemetry enable
+#define TELEMETRY true
 
 #endif
