@@ -5,7 +5,7 @@ uint32_t alerts_to_enable = TWAI_ALERT_ABOVE_ERR_WARN|TWAI_ALERT_ERR_ACTIVE|TWAI
 int txCounter = 0;
 twai_status_info_t twai_status;
 
-extern int32_t moduleTime[5] = {0,0,0,0,0};
+int32_t moduleTime[5] = {0,0,0,0,0};
 
 twai_message_t txMessage = {
 
@@ -74,12 +74,14 @@ void txTask(TimerHandle_t xTimer){
 
   if(txCounter>=100){
     //1s messages
+    /*
     if(getStatus() != CHARGING){
       elconControl(0,0,0);
     }
     else if(getStatus() == CHARGING){
       elconControl(MAX_CHARGE*100,CHARGE_CURRENT,1);
     }
+    */
     txCounter = 0;
   }
   txCounter++;
@@ -187,4 +189,8 @@ int32_t getMaxCanTimeout(){
 uint32_t getCANErrorCount(){
   twai_get_status_info(&twai_status);
   return twai_status.bus_error_count;
+}
+
+int32_t getModuleTime(int module){
+  return moduleTime[module];
 }

@@ -30,7 +30,7 @@ void stateLoop(void){
     
     case PRECHARGE_CHECK:
     //check if precharge voltage is fine, and if at least 2 seconds have passed. (calculated precharge time on ESF is 0.6s)
-    if(getPrechargeVoltage()>(getPackVoltage()*0.9) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
+    if(getPrechargeVoltage()>(getPackVoltage()*0.8) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
       stateVariables.previousState = PRECHARGE_CHECK;
       stateVariables.currentState = ACTIVE;
       gpio_set_level(PRECH_OK,1);
@@ -47,16 +47,21 @@ void stateLoop(void){
     break;
 
     case ACTIVE:
+
+    /*
     if(gpio_get_level(CHARGE_PIN) == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = CHARGING;
     }
+    */
     if(gpio_get_level(AIRN_GPIO) == 0){
+      vTaskDelay(pdMS_TO_TICKS(10));
+      if(gpio_get_level(AIRN_GPIO) == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = IDLE;
       gpio_set_level(PRECH_OK,0);
+      }
     }
-
     checkFaults();
     break;
     
@@ -141,7 +146,7 @@ void checkFaults(){
     stateVariables.currentState = FAULT;
     stateVariables.errors.timeoutTime = getMaxCanTimeout();
   }
-  else if(getCANErrorCount()>96){
+  else if(getCANErrorCount()>9000){
     stateVariables.errors.error = CANERROR;
     stateVariables.previousState = stateVariables.currentState;
     stateVariables.currentState = FAULT;

@@ -26,14 +26,13 @@ extern "C" void app_main(void)
   gpio_set_direction(STATUS_LED,GPIO_MODE_OUTPUT);
   gpio_set_direction(FAULT_LED,GPIO_MODE_OUTPUT);
   gpio_set_direction(AMS_LATCH,GPIO_MODE_INPUT_OUTPUT);
-  gpio_set_level(AMS_LATCH,1);
-  gpio_set_direction(PRECH_OK,GPIO_MODE_OUTPUT);
+  gpio_set_direction(PRECH_OK,GPIO_MODE_INPUT_OUTPUT);
   gpio_set_level(PRECH_OK,0);
-
+  
   setupADC();
   CANbegin(CANRX,CANTX);
-
-  vTaskDelay(pdMS_TO_TICKS(6000));
+  vTaskDelay(pdMS_TO_TICKS(3000));
+  gpio_set_level(AMS_LATCH,1);
   while(1){
     if(loopCounter % 1 ==0){
       ESP_LOGI(TAG,"I AM ALIVE\n");

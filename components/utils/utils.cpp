@@ -18,7 +18,7 @@ void setupADC(){
   };
   
   ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,PRECHSENSE_ADC, &adc_chan_config));
-  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config));  
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle,CURSENSE_ADC, &adc_chan_config)); 
 }
 
 double getPrechargeVoltage(){
@@ -32,7 +32,7 @@ double getPrechargeVoltage(){
   double voltage_mv = (double)raw / 4095.0 * 3.3;
   //printf("ADC Voltage reading: %.2f\n",voltage_mv);
   voltage_mv -= 1.19;
-  voltage_mv *= 252.6315;
+  voltage_mv *= 280.6315;
   //printf("Actual voltage: %.2f\n",voltage_mv);
   return voltage_mv;
 }
@@ -56,17 +56,19 @@ void printInfo(){
   printf(">IMD:%d|np\n",gpio_get_level(IMD_GPIO));
   printf(">AMS:%d|np\n",gpio_get_level(AMS_LATCH));
   printf(">LATCH:%d|np\n",gpio_get_level(LATCH_GPIO));
-  printf(">AIR-:%d|np\n",gpio_get_level(AIRN_GPIO));
-  printf(">HV:%d|np\n",gpio_get_level(HV_GPIO));
+  printf(">AIR-:%d\n",gpio_get_level(AIRN_GPIO));
+  printf(">Precharge OK:%d\n",gpio_get_level(PRECH_OK));
+  printf(">HV:%d\n",gpio_get_level(HV_GPIO));
   printf(">Pack Current:%.3f\n",getPackCurrent());
   printf(">Pack Voltage: %.3f\n", getPackVoltage());
   printf(">Precharge Voltage:%.3f\n", getPrechargeVoltage());
   printf(">Error Number:%d\n",getErrorCode());
-  printf(">Module 1 Timeout:%d\n",moduleTime[0]);
-  printf(">Module 2 Timeout:%d\n",moduleTime[1]);
-  printf(">Module 3 Timeout:%d\n",moduleTime[2]);
-  printf(">Module 4 Timeout:%d\n",moduleTime[3]);
-  printf(">Module 5 Timeout:%d\n",moduleTime[4]);
+  printf(">Module 1 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(0));
+  printf(">Module 2 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(1));
+  printf(">Module 3 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(2));
+  printf(">Module 4 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(3));
+  printf(">Module 5 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(4));
+  printf(">Charge Pin:%d\n",gpio_get_level(CHARGE_PIN));
   if(gpio_get_level(GPIO_NUM_0) == 0){
     printModules();
   }
