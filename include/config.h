@@ -30,7 +30,7 @@
 #define CHARGE_CURRENT     4      //max charge current in amps 
 
 //CAN
-#define CAN_TIMEOUT 10000 // milliseconds
+#define CAN_TIMEOUT 100000 // Allowable CAN Errors
 
 //Error thresholds
 #define THRESHOLD_OVERTEMP      60
@@ -38,7 +38,7 @@
 #define THRESHOLD_UNDERVOLTAGE  0   //3.2
 #define THRESHOLD_MAXDELTA      0.2
 #define THRESHOLD_OVERCURRENT   100
-#define THRESHOLD_CANTIMEOUT    22000 //milliseconds
+#define THRESHOLD_CANTIMEOUT    100000 //milliseconds
 
 //telemetry enable
 #define TELEMETRY true
