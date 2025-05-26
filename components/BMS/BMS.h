@@ -23,8 +23,11 @@ void setModuleTemp(int module, int thermistor, double newTemp);
 // info for other functions
 double getPackVoltage();  // sum of all cell voltages
 double getMaxTemp();      // maximum thermistor temperature
+double getMaxTemp(int& index);
 double getMaxVoltage();   // maximum cell voltage
+double getMaxVoltage(int& index);
 double getMinVoltage();   // minimum cell voltage
+double getMinVoltage(int& index);
 
 //serial debugging
 void printModules();

@@ -23,7 +23,7 @@ twai_message_t txMessage = {
 
 // can instatiation
 
-void CANbegin(gpio_num_t rxpin, gpio_num_t txpin){
+void CANbegin(gpio_num_t rxpin, gpio_num_t txpin){ 
 
   twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(txpin,rxpin,TWAI_MODE_NORMAL);
   twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
@@ -140,18 +140,26 @@ void rxTask(void *arg){
         }
         //update last received for timeout
       }
-      /*
+      
       else if(rx_msg.identifier == 1000){
         //Error message!
         uint8_t module_id = rx_msg.data[0];
-        uint8_t errorcode = rx_msg.data[1];
+        errorCode errorcode = (errorCode)rx_msg.data[1];
         double voltage = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.001;
         uint8_t voltageIndex = rx_msg.data[4];
         double temperature = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.01;
         uint8_t tempIndex = rx_msg.data[7];
-        raiseCANError(newError);
+
+        errorFlags newError = {
+          .error = errorcode,
+          .moduleNumber = module_id,
+          .cellVoltage = voltage,
+          .cellIndex = voltageIndex,
+          .thermistorTemp = temperature,
+          .thermistorIndex = tempIndex,
+        };
+        raiseError(newError);
       }
-      */
     }
   }
 }

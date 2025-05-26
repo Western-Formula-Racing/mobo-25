@@ -38,7 +38,7 @@
 #define THRESHOLD_UNDERVOLTAGE  3.2   //3.2
 #define THRESHOLD_MAXDELTA      0.2
 #define THRESHOLD_OVERCURRENT   100
-#define THRESHOLD_CANTIMEOUT    20000 //milliseconds
+#define THRESHOLD_CANTIMEOUT    200000 //milliseconds
 
 //telemetry enable
 #define TELEMETRY true

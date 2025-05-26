@@ -34,14 +34,14 @@ enum errorCode{
 struct errorFlags{
   errorCode error = NONE;
   //////////////////////////  //error-specific values:
-  uint8_t moduleNumber = 0;       //module that raised the error 
-  double cellVoltage = 0;         //cell voltage value
-  uint8_t cellIndex = 0;          //cell number
-  double thermistorTemp = 0;      //thermistor temperature value
-  uint8_t thermistorIndex = 0;    //thermistor number
-  int32_t timeoutTime = 0;            //CAN timeout period
+  uint8_t moduleNumber = -1;       //module that raised the error 
+  double cellVoltage = -1;         //cell voltage value
+  uint8_t cellIndex = -1;          //cell number
+  double thermistorTemp = -1;      //thermistor temperature value
+  uint8_t thermistorIndex = -1;    //thermistor number
+  int32_t timeoutTime = -1;            //CAN timeout period
   int timeoutModule = -1;
-  double timeoutCurrent = 0;      //current at fault time
+  double timeoutCurrent = -1;      //current at fault time
 };
 
 enum state{
@@ -59,12 +59,15 @@ struct stateVars{
   state previousState = IDLE;
   uint32_t prechargeStartTime = 0;
   uint32_t prechargeEndTime = 0;
+  bool airN = 0;
+  bool chargePin = 1;
   errorFlags errors;
 };
 
 void stateLoop();
 void checkFaults();
 state getStatus();
+stateVars getStateVariables();
 errorCode getErrorCode();
 void printFault(errorFlags errorflags);
 void raiseError(errorFlags error);

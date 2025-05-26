@@ -20,6 +20,7 @@ extern "C" void app_main(void)
   gpio_set_direction(HV_GPIO,GPIO_MODE_INPUT);
   gpio_set_direction(AIRN_GPIO,GPIO_MODE_INPUT);
   gpio_set_direction(CHARGE_PIN,GPIO_MODE_INPUT);
+  gpio_set_pull_mode(CHARGE_PIN,GPIO_PULLUP_ONLY);
   gpio_set_direction(GPIO_NUM_0,GPIO_MODE_INPUT);
   
   //init outputs

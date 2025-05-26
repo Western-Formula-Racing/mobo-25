@@ -5,10 +5,32 @@ static const char *TAG = "State Machine";
 stateVars stateVariables;
 stateVars previousStateVariables;
 
+int chargePinBuffer[5] = {1,1,1,1,1};
+int chargePinBufferCount = 0;
+int airNBuffer[5] = {0,0,0,0,0};
+int airNBufferCount = 0;
+
 void stateLoop(void){
 
   previousStateVariables = stateVariables;
-
+  
+  chargePinBuffer[chargePinBufferCount++] = gpio_get_level(CHARGE_PIN);
+  if(chargePinBufferCount > 4) chargePinBufferCount = 0;
+  if((chargePinBuffer[0] == 1) && (chargePinBuffer[1] == 1) && (chargePinBuffer[2] == 1) && (chargePinBuffer[3] == 1) && (chargePinBuffer[4] == 1)){
+    stateVariables.chargePin = true;
+  } else if((chargePinBuffer[0] == 0) && (chargePinBuffer[1] == 0) && (chargePinBuffer[2] == 0) && (chargePinBuffer[3] == 0) && (chargePinBuffer[4] == 0)){
+    stateVariables.chargePin = false;
+  }
+  
+  airNBuffer[airNBufferCount++] = gpio_get_level(AIRN_GPIO);
+  if(airNBufferCount > 4) airNBufferCount = 0;
+  if((airNBuffer[0] == 1) && (airNBuffer[1] == 1) && (airNBuffer[2] == 1) && (airNBuffer[3] == 1) && (airNBuffer[4] == 1)){
+    stateVariables.airN = true;
+  } else if ((airNBuffer[0] == 0) && (airNBuffer[1] == 0) && (airNBuffer[2] == 0) && (airNBuffer[3] == 0) && (airNBuffer[4] == 0)){
+    stateVariables.airN = false;
+  }
+  
+  
   switch(previousStateVariables.currentState){ 
     case IDLE:
     //check if precharge has started
@@ -30,7 +52,7 @@ void stateLoop(void){
     
     case PRECHARGE_CHECK:
     //check if precharge voltage is fine, and if at least 2 seconds have passed. (calculated precharge time on ESF is 0.6s)
-    if(getPrechargeVoltage()>(getPackVoltage()*0.8) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
+    if(getPrechargeVoltage()>(getPackVoltage()*0.9) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
       stateVariables.previousState = PRECHARGE_CHECK;
       stateVariables.currentState = ACTIVE;
       gpio_set_level(PRECH_OK,1);
@@ -48,13 +70,14 @@ void stateLoop(void){
 
     case ACTIVE:
 
-    /*
+    
     if(gpio_get_level(CHARGE_PIN) == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = CHARGING;
     }
-    */
-    if(gpio_get_level(AIRN_GPIO) == 0){
+    
+    
+    if(stateVariables.airN == 0){
       vTaskDelay(pdMS_TO_TICKS(10));
       if(gpio_get_level(AIRN_GPIO) == 0){
       stateVariables.previousState = ACTIVE;
@@ -66,7 +89,7 @@ void stateLoop(void){
     break;
     
     case CHARGING:
-    if(gpio_get_level(CHARGE_PIN) == 1){
+    if(stateVariables.chargePin == 1){
       stateVariables.previousState = CHARGING;
       stateVariables.currentState = ACTIVE;
     }
@@ -89,6 +112,7 @@ void stateLoop(void){
     ESP_LOGE(TAG,"Charging Complete");
     checkFaults();
     break;
+
     case FAULT:
     gpio_set_level(FAULT_LED,1);
     gpio_set_level(AMS_LATCH,0);
@@ -101,30 +125,37 @@ void stateLoop(void){
 state getStatus(){
   return stateVariables.currentState;
 }
+stateVars getStateVariables(){
+  return stateVariables;
+}
 errorCode getErrorCode(){
   return stateVariables.errors.error;
 }
 
 void checkFaults(){
+  int index;
   if(getMaxTemp()>THRESHOLD_OVERTEMP){
     stateVariables.errors.error = OVERTEMP;
     stateVariables.previousState = stateVariables.currentState;
     stateVariables.currentState = FAULT;
-    stateVariables.errors.thermistorTemp = getMaxTemp();
+    stateVariables.errors.thermistorTemp = getMaxTemp(index);
+    stateVariables.errors.thermistorIndex = index;
   }
-  else if(getMinVoltage()<THRESHOLD_UNDERVOLTAGE){
+  else if(getMinVoltage()<THRESHOLD_UNDERVOLTAGE && getMinVoltage() != 0){
     stateVariables.errors.error = UNDERVOLTAGE;
     stateVariables.previousState = stateVariables.currentState;
     stateVariables.currentState = FAULT;
-    stateVariables.errors.cellVoltage = getMinVoltage();
+    stateVariables.errors.cellVoltage = getMinVoltage(index);
+    stateVariables.errors.cellIndex = index;
   }
   else if(getMaxVoltage()>THRESHOLD_OVERVOLTAGE){
     stateVariables.errors.error = OVERVOLTAGE;
     stateVariables.previousState = stateVariables.currentState;
     stateVariables.currentState = FAULT;
-    stateVariables.errors.cellVoltage = getMaxVoltage();
+    stateVariables.errors.cellVoltage = getMaxVoltage(index);
+    stateVariables.errors.cellIndex = index;
   }
-  else if(getMaxVoltage()-getMinVoltage()>THRESHOLD_MAXDELTA && getMinVoltage()>0){
+  else if(getMaxVoltage()-getMinVoltage()>THRESHOLD_MAXDELTA && getMinVoltage() > 0 && stateVariables.currentState == IDLE){
     stateVariables.errors.error = IMBALANCE;
     stateVariables.previousState = stateVariables.currentState;
     stateVariables.currentState = FAULT;
@@ -212,4 +243,10 @@ void printFault(errorFlags errorflags){
       ESP_LOGE(TAG,"Precharge Failed!");
     break;
 }
+}
+
+void raiseError(errorFlags error){
+  stateVariables.errors = error;
+  stateVariables.previousState = stateVariables.currentState;
+  stateVariables.currentState = FAULT;
 }

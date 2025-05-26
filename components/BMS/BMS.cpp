@@ -32,7 +32,22 @@ double getMaxTemp(){
   double max = 0;
   for(int i=0;i<5;i++){
     for(int j=0;j<18;j++){
-      if(max<modules[i].temp[j]) max = modules[i].temp[j];
+      if(max<modules[i].temp[j]){
+        max = modules[i].temp[j];
+      }
+    }
+  }
+  return max;
+}
+
+double getMaxTemp(int& index){
+  double max = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<18;j++){
+      if(max<modules[i].temp[j]){
+        max = modules[i].temp[j];
+        index = i*18+j;
+      }
     }
   }
   return max;
@@ -42,7 +57,22 @@ double getMaxVoltage(){
   double max = 0;
   for(int i=0;i<5;i++){
     for(int j=0;j<20;j++){
-      if(max<modules[i].voltage[j]) max = modules[i].voltage[j];
+      if(max<modules[i].voltage[j]){ 
+        max = modules[i].voltage[j];
+      }
+    }
+  }
+  return max;
+}
+
+double getMaxVoltage(int& index){
+  double max = 0;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(max<modules[i].voltage[j]){ 
+        max = modules[i].voltage[j];
+        index = i*20+j;
+      }
     }
   }
   return max;
@@ -53,6 +83,19 @@ double getMinVoltage(){
   for(int i=0;i<5;i++){
     for(int j=0;j<20;j++){
       if(min>modules[i].voltage[j]) min = modules[i].voltage[j];
+    }
+  }
+  return min;
+}
+
+double getMinVoltage(int& index){
+  double min = 100;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<20;j++){
+      if(min>modules[i].voltage[j]) {
+        min = modules[i].voltage[j];
+        index = i*20+j;
+      }
     }
   }
   return min;
