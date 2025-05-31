@@ -29,9 +29,7 @@ double getPrechargeVoltage(){
   int raw = 0;
   int raw_total = 0;
   for(int i = 0;i<ADC_SAMPLES;i++){
-    while(raw==0){
-      adc_oneshot_read(adc1_handle,PRECHSENSE_ADC,&raw);
-    }
+    adc_oneshot_read(adc1_handle,PRECHSENSE_ADC,&raw);
     //printf(">ADC raw: %d\n",raw);
     raw_total += raw;
     //printf(">ADC raw total: %d\n",raw_total);
@@ -49,7 +47,11 @@ double getPrechargeVoltage(){
 }
 
 double getSOC(){
-  return 123.4;
+  double min = getMinVoltage();
+  double soc = -250.0 * min*min*min + 2040.0 * min*min - 6240.0 * min + 6850.0;
+  if (soc < 0) return 0;
+  if (soc > 100) return 100;
+  return soc;
 }
 
 double getPackCurrent(){
@@ -60,10 +62,9 @@ double getPackCurrent(){
     raw_total += raw;
   }
   raw = raw_total/ADC_SAMPLES;
-  //printf("ADC raw reading: %d\n", raw);
-  double voltage_mv = (double)raw / 4095.0 * 3.3;
+  double voltage_mv = raw / 4095.0 * 3.3;
   voltage_mv -= 2.5;
-  voltage_mv /= 4;
+  voltage_mv /= 4.0;
   return voltage_mv;
 }
 
@@ -79,11 +80,15 @@ void printInfo(){
   printf(">Pack Voltage: %.3f\n", getPackVoltage());
   printf(">Precharge Voltage:%.3f\n", getPrechargeVoltage());
   printf(">Error Number:%d\n",getErrorCode());
-  printf(">Module 1 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(0));
-  printf(">Module 2 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(1));
-  printf(">Module 3 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(2));
-  printf(">Module 4 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(3));
-  printf(">Module 5 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(4));
+
+  if(getStatus()==IDLE || getStatus() == CHARGING){
+    printf(">Module 1 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(0));
+    printf(">Module 2 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(1));
+    printf(">Module 3 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(2));
+    printf(">Module 4 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(3));
+    printf(">Module 5 Timeout:%ld\n",pdTICKS_TO_MS(xTaskGetTickCount())-getModuleTime(4));
+  }
+  
   printf(">Charge Pin:%d\n",getStateVariables().chargePin);
   if(gpio_get_level(GPIO_NUM_0) == 0){
     printModules();

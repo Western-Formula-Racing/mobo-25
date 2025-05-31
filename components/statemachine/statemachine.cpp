@@ -79,7 +79,7 @@ void stateLoop(void){
     
     if(stateVariables.airN == 0){
       vTaskDelay(pdMS_TO_TICKS(10));
-      if(gpio_get_level(AIRN_GPIO) == 0){
+      if(stateVariables.airN == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = IDLE;
       gpio_set_level(PRECH_OK,0);

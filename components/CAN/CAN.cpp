@@ -50,19 +50,19 @@ void txTask(TimerHandle_t xTimer){
   if(txCounter%10 == 0){
     //100ms messages:
     txMessage.identifier = 1056;
-    int16_t current = (int16_t) (getPackCurrent()*10);
-    //printf("Scaled pack current:%d",current);
-    current += 32760;
-    txMessage.data[0] = (current & 0xFF);
-    txMessage.data[1] = (current & 0xFF00)>>8;
+    int16_t current16 = (int16_t)getPackCurrent()*10;
+    //printf(">Scaled pack current:%d\n",current16);
+    current16 += 32760;
+    txMessage.data[0] = (current16 & 0xFF);
+    txMessage.data[1] = (current16 & 0xFF00)>>8;
     uint8_t imd = gpio_get_level(IMD_GPIO);
     uint8_t ams = gpio_get_level(AMS_LATCH);
     uint8_t bspd = gpio_get_level(BSPD_GPIO);
     uint8_t latch = gpio_get_level(LATCH_GPIO);
     uint8_t prech_en = gpio_get_level(AIRN_GPIO);
     uint8_t HVAct = gpio_get_level(HV_GPIO);
-    txMessage.data[2] = (imd & (ams<<1) & (bspd<<2) & (latch<<3) & (prech_en<<4) & (HVAct<<5));
-    uint16_t SOC = (uint16_t)(getSOC() * 100);
+    txMessage.data[2] = (imd | (ams<<1) | (bspd<<2) | (latch<<3) | (prech_en<<4) | (HVAct<<5));
+    uint16_t SOC = (uint16_t)(getSOC()*100);
     txMessage.data[3] = (uint8_t)SOC & 0xFF;
     txMessage.data[4] = (uint8_t)(SOC & 0xFF00)>>8;
     txMessage.data[5] = getStatus();
@@ -149,7 +149,7 @@ void rxTask(void *arg){
         uint8_t voltageIndex = rx_msg.data[4];
         double temperature = (rx_msg.data[2] | (int)rx_msg.data[3] << 8)*0.01;
         uint8_t tempIndex = rx_msg.data[7];
-
+        
         errorFlags newError = {
           .error = errorcode,
           .moduleNumber = module_id,

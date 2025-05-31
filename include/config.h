@@ -18,7 +18,7 @@
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
-#define ADC_SAMPLES        10
+#define ADC_SAMPLES        4
 //5V IO pins
 #define IO_1_5V            GPIO_NUM_5    //5VIO 1
 #define IO_2_5V            GPIO_NUM_17   //5VIO 1
@@ -35,10 +35,10 @@
 //Error thresholds
 #define THRESHOLD_OVERTEMP      60
 #define THRESHOLD_OVERVOLTAGE   4.25
-#define THRESHOLD_UNDERVOLTAGE  3.2   //3.2
+#define THRESHOLD_UNDERVOLTAGE  3.0   //3.2 V
 #define THRESHOLD_MAXDELTA      0.2
 #define THRESHOLD_OVERCURRENT   100
-#define THRESHOLD_CANTIMEOUT    200000 //milliseconds
+#define THRESHOLD_CANTIMEOUT    100000 //milliseconds
 
 //telemetry enable
 #define TELEMETRY true

@@ -11,10 +11,10 @@
 
 enum errorCode{
   NONE = 0,
-  OVERTEMP = 69,  //Thermistor >60C
-  UNDERVOLTAGE,   //Cell voltage <2.5 V
-  OVERVOLTAGE,    //cell voltage >4.2 V
-  IMBALANCE,      //cell imbalance >0.2 V
+  OVERTEMP = 69,  //Thermistor > 60C
+  UNDERVOLTAGE,   //Cell voltage < 3V
+  OVERVOLTAGE,    //cell voltage > 4.2 V
+  IMBALANCE,      //cell imbalance > 0.2 V
   OPENCELL,       //open cell circuit
   OPENTHERMISTOR, //open thermistor circuit
   DIAGN,          //LTC6813 DIAGN fail
