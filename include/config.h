@@ -26,7 +26,7 @@
 #define IO_4_5V            GPIO_NUM_8    //5VIO 1
 
 //BMS
-#define MAX_CHARGE         3.9    //max cell voltage to charge to
+#define MAX_CHARGE         4.0    //max cell voltage to charge to
 #define CHARGE_CURRENT     5      //max charge current in amps 
 
 //CAN
@@ -35,9 +35,9 @@
 //Error thresholds
 #define THRESHOLD_OVERTEMP      60
 #define THRESHOLD_OVERVOLTAGE   4.25
-#define THRESHOLD_UNDERVOLTAGE  3.0   //3.2 V
+#define THRESHOLD_UNDERVOLTAGE  2.9   //3.2 V
 #define THRESHOLD_MAXDELTA      0.2
-#define THRESHOLD_OVERCURRENT   100
+#define THRESHOLD_OVERCURRENT   150
 #define THRESHOLD_CANTIMEOUT    100000 //milliseconds
 
 //telemetry enable
