@@ -160,6 +160,9 @@ void rxTask(void *arg){
         };
         raiseError(newError);
       }
+      else if (rx_msg.identifier == 2566869221 && onChargeCart == false){
+        onChargeCart = true;
+      }
     }
   }
 }
