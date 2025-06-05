@@ -72,7 +72,7 @@ void stateLoop(void){
     case ACTIVE:
 
     
-    if(gpio_get_level(CHARGE_PIN) == 0 && onChargeCart == true){
+    if(stateVariables.chargePin == 0 && onChargeCart == true){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = CHARGING;
     }
