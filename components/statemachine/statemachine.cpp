@@ -72,7 +72,7 @@ void stateLoop(void){
     case ACTIVE:
 
     
-    if(stateVariables.chargePin == 0 && onChargeCart == true){
+    if(stateVariables.chargePin == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = CHARGING;
     }
