@@ -9,7 +9,7 @@
 #include "utils.h"
 #include "CAN.h"
 
-extern bool onChargeCart = false;
+extern bool onChargeCart;
 
 enum errorCode{
   NONE = 0,

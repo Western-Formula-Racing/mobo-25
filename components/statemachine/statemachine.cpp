@@ -9,6 +9,7 @@ int chargePinBuffer[5] = {1,1,1,1,1};
 int chargePinBufferCount = 0;
 int airNBuffer[5] = {0,0,0,0,0};
 int airNBufferCount = 0;
+bool onChargeCart = false;
 
 void stateLoop(void){
 
