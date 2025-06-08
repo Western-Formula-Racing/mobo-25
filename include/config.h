@@ -34,11 +34,11 @@
 
 //Error thresholds
 #define THRESHOLD_OVERTEMP      60
-#define THRESHOLD_OVERVOLTAGE   4.25
+#define THRESHOLD_OVERVOLTAGE   4.15
 #define THRESHOLD_UNDERVOLTAGE  2.6   
 #define THRESHOLD_MAXDELTA      0.2
 #define THRESHOLD_OVERCURRENT   150
-#define THRESHOLD_CANTIMEOUT    100000 //milliseconds
+#define THRESHOLD_CANTIMEOUT    20000 //milliseconds
 
 //telemetry enable
 #define TELEMETRY true
