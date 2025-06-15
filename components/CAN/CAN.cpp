@@ -61,7 +61,8 @@ void txTask(TimerHandle_t xTimer){
     uint8_t latch = gpio_get_level(LATCH_GPIO);
     uint8_t prech_en = gpio_get_level(AIRN_GPIO);
     uint8_t HVAct = gpio_get_level(HV_GPIO);
-    txMessage.data[2] = (imd | (ams<<1) | (bspd<<2) | (latch<<3) | (prech_en<<4) | (HVAct<<5));
+    uint8_t chargePin = getStateVariables().chargePin;
+    txMessage.data[2] = (imd | (ams<<1) | (bspd<<2) | (latch<<3) | (prech_en<<4) | (HVAct<<5) | (chargePin<<6));
     uint16_t SOC = (uint16_t)(getSOC()*100);
     txMessage.data[3] = (uint8_t)SOC & 0xFF;
     txMessage.data[4] = (uint8_t)(SOC & 0xFF00)>>8;
@@ -159,6 +160,9 @@ void rxTask(void *arg){
           .thermistorIndex = tempIndex,
         };
         raiseError(newError);
+      }
+      else if (rx_msg.identifier == 419385573 && onChargeCart == false){
+        onChargeCart = true;
       }
     }
   }

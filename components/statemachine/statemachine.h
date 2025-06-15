@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "CAN.h"
 
+extern bool onChargeCart;
+
 enum errorCode{
   NONE = 0,
   OVERTEMP = 69,  //Thermistor > 60C

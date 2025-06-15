@@ -9,6 +9,7 @@ int chargePinBuffer[5] = {1,1,1,1,1};
 int chargePinBufferCount = 0;
 int airNBuffer[5] = {0,0,0,0,0};
 int airNBufferCount = 0;
+bool onChargeCart = false;
 
 void stateLoop(void){
 
@@ -71,7 +72,7 @@ void stateLoop(void){
     case ACTIVE:
 
     
-    if(gpio_get_level(CHARGE_PIN) == 0){
+    if(stateVariables.chargePin == 0){
       stateVariables.previousState = ACTIVE;
       stateVariables.currentState = CHARGING;
     }
