@@ -15,6 +15,7 @@
 #define FAN_PWM_PIN        GPIO_NUM_8    // Fan PWM pin
 #define STATUS_LED         GPIO_NUM_16   // Green LED
 #define FAULT_LED          GPIO_NUM_15   // Red LED
+#define TSSI_ENABLE        GPIO_NUM_17
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
@@ -26,7 +27,7 @@
 #define IO_4_5V            GPIO_NUM_8    //5VIO 1
 
 //BMS
-#define MAX_CHARGE         4.0    //max cell voltage to charge to
+#define MAX_CHARGE         4.1    //max cell voltage to charge to
 #define CHARGE_CURRENT     5      //max charge current in amps 
 
 //CAN
