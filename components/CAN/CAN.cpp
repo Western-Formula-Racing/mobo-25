@@ -71,6 +71,21 @@ void txTask(TimerHandle_t xTimer){
     txMessage.data[7] = 0;
 
     twai_transmit(&txMessage,portMAX_DELAY);
+
+
+    txMessage.identifier = 1057;
+    struct PackInfo {
+      uint16_t minTemp;
+      uint16_t maxTemp;
+      uint16_t minCellVoltage;
+      uint16_t maxCellVoltage;
+    } packInfo;
+
+    *(struct PackInfo*)txMessage.data = packInfo;
+
+
+    twai_transmit(&txMessage,portMAX_DELAY);
+
   }
 
   if(txCounter>=100){

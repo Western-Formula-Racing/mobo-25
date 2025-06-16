@@ -29,6 +29,18 @@ double getPackVoltage(){
 }
 
 double getMaxTemp(){
+  double min = 1000;
+  for(int i=0;i<5;i++){
+    for(int j=0;j<18;j++){
+      if(min > modules[i].temp[j]){
+        min = modules[i].temp[j];
+      }
+    }
+  }
+  return min;
+}
+
+double getMaxTemp(){
   double max = 0;
   for(int i=0;i<5;i++){
     for(int j=0;j<18;j++){
