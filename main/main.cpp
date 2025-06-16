@@ -34,7 +34,7 @@ extern "C" void app_main(void)
   
   setupADC();
   CANbegin(CANRX,CANTX);
-  vTaskDelay(pdMS_TO_TICKS(3000));
+  vTaskDelay(pdMS_TO_TICKS(1000));
   gpio_set_level(AMS_LATCH,1);
   gpio_set_level(TSSI_ENABLE,1);
   

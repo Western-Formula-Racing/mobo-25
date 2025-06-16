@@ -1,5 +1,6 @@
 #include "CAN.h"
 static const char *TAG = "CAN";
+#include <string.h>
 
 uint32_t alerts_to_enable = TWAI_ALERT_ABOVE_ERR_WARN|TWAI_ALERT_ERR_ACTIVE|TWAI_ALERT_RX_QUEUE_FULL;
 int txCounter = 0;
@@ -48,6 +49,22 @@ void txTask(TimerHandle_t xTimer){
   //10ms messages:
 
   if(txCounter%10 == 0){
+    
+    txMessage.identifier = 1057;
+    struct PackInfo {
+      uint16_t minTemp;
+      uint16_t maxTemp;
+      uint16_t minCellVoltage;
+      uint16_t maxCellVoltage;
+    } packInfo;
+
+    packInfo.minTemp = getMinTemp()*10;
+    packInfo.maxTemp = getMaxTemp()*10;
+    packInfo.minCellVoltage = getMinVoltage() *1000;
+    packInfo.maxCellVoltage = getMaxVoltage() *1000;
+    memcpy(txMessage.data, &packInfo, sizeof(packInfo));
+    twai_transmit(&txMessage,portMAX_DELAY);
+
     //100ms messages:
     txMessage.identifier = 1056;
     int16_t current16 = (int16_t)getPackCurrent()*10;
@@ -73,18 +90,6 @@ void txTask(TimerHandle_t xTimer){
     twai_transmit(&txMessage,portMAX_DELAY);
 
 
-    txMessage.identifier = 1057;
-    struct PackInfo {
-      uint16_t minTemp;
-      uint16_t maxTemp;
-      uint16_t minCellVoltage;
-      uint16_t maxCellVoltage;
-    } packInfo;
-
-    *(struct PackInfo*)txMessage.data = packInfo;
-
-
-    twai_transmit(&txMessage,portMAX_DELAY);
 
   }
 
