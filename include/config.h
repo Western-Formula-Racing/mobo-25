@@ -15,7 +15,7 @@
 #define FAN_PWM_PIN        GPIO_NUM_8    // Fan PWM pin
 #define STATUS_LED         GPIO_NUM_16   // Green LED
 #define FAULT_LED          GPIO_NUM_15   // Red LED
-#define TSSI_ENABLE        GPIO_NUM_17
+#define TSSI_ENABLE        GPIO_NUM_4    // TSSI Enable pin
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input

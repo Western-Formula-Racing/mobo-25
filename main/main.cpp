@@ -30,13 +30,13 @@ extern "C" void app_main(void)
   gpio_set_direction(PRECH_OK,GPIO_MODE_INPUT_OUTPUT);
   gpio_set_direction(TSSI_ENABLE,GPIO_MODE_OUTPUT);
   gpio_set_level(PRECH_OK,0);
-  gpio_set_level(TSSI_ENABLE,0);
+  gpio_set_level(TSSI_ENABLE,1);
   
   setupADC();
   CANbegin(CANRX,CANTX);
   vTaskDelay(pdMS_TO_TICKS(3000));
   gpio_set_level(AMS_LATCH,1);
-  gpio_set_level(TSSI_ENABLE,1);
+  gpio_set_level(TSSI_ENABLE,0);
   
   while(1){
     if(loopCounter % 1 ==0){
