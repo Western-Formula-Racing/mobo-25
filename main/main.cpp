@@ -37,7 +37,7 @@ extern "C" void app_main(void)
   vTaskDelay(pdMS_TO_TICKS(3000));
   gpio_set_level(AMS_LATCH,1);
   gpio_set_level(TSSI_ENABLE,0);
-  
+  //hi
   while(1){
     if(loopCounter % 1 ==0){
       ESP_LOGI(TAG,"I AM ALIVE\n");
