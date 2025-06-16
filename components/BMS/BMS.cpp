@@ -28,7 +28,7 @@ double getPackVoltage(){
   return total;
 }
 
-double getMaxTemp(){
+double getMinTemp(){
   double min = 1000;
   for(int i=0;i<5;i++){
     for(int j=0;j<18;j++){
