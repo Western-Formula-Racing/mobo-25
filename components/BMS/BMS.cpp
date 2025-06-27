@@ -127,3 +127,38 @@ void printModules(){
     printf("\n");
   }
 }
+
+//SoC Code 
+
+double setHallCalibrationInverter(float hallZero){
+
+//if inverter DC current in = 0 & inverter status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if inverter is on just give the last value 
+  
+}
+
+double setHallCalibrationElCon(float hallZero){
+
+//When ElCon current ouput = 0 & ElCon status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if ElCon is on just give the last value 
+  
+}
+
+double getMaxCharge(double maxCharge, double currentCharge){
+//if getPackVoltage() is 300-305 V and ElCon output current is greater then zero then enter a loop that adds to a variable, when the ElCon output goes to zero exit the loop and decide wether to 
+//add the total charge to just currentCharge or both currentCharge and MaxCharge based on if we charged the back up to 405-410V (set them equal and return one of them) 
+
+}
+
+
+double getCurrentFlow(double currentFlow){
+
+//call on your hallZero functions based on which status message you are recieving (ElCon or Cascadia) then based on the calibration convert the CURSENSE input into a current and return currentFLow
+
+}
+
+double getCurrentCharge(double currentCharge){
+  //loop through calling your current flow function every 100ms or so and subtract it from whatever your current charge; you must find a way to return the currentCharge inn the getMaxCharge was initially
+}
+double getSoC(double SoC, double currentCharge, double maxCharge){
+  //use your currentCharge and maxCharge to see what SoC you are at
+  
+}
