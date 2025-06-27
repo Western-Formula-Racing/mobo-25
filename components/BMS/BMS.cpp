@@ -1,4 +1,5 @@
 #include "BMS.h"
+#include "CAN.cpp"
 
 const char* TAG = "BMS";
 
@@ -130,24 +131,35 @@ void printModules(){
 
 //SoC Code 
 
-double setHallCalibrationInverter(float hallZero){
+double setHallCalibrationInverter(float hallZero) {
 
 //if inverter DC current in = 0 & inverter status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if inverter is on just give the last value 
   
 }
 
-double setHallCalibrationElCon(float hallZero){
+double setHallCalibrationElCon(float hallZero) {
 
 //When ElCon current ouput = 0 & ElCon status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if ElCon is on just give the last value 
   
 }
 
-double getMaxCharge(double maxCharge, double currentCharge){
+double getMaxCharge(double maxCharge, double currentCharge){ 
 //if getPackVoltage() is 300-305 V and ElCon output current is greater then zero then enter a loop that adds to a variable, when the ElCon output goes to zero exit the loop and decide wether to 
 //add the total charge to just currentCharge or both currentCharge and MaxCharge based on if we charged the back up to 405-410V (set them equal and return one of them) 
 
-}
-
+  if ((getStatus()==CHARGING) && (getPackVoltage() > 300 && getPackVoltage() < 305) && (CHARGE_CURRENT>0)){
+      if(txCounter>=100){
+        if (getPackVoltage()<405) {
+          currentCharge += CHARGE_CURRENT;
+        } else if (getPackVoltage() > 400 && getPackVoltage() < 405){
+          maxCharge = currentCharge;
+        }
+        txCounter = 0;  
+        }
+    txCounter++;
+  }
+  return maxCharge; 
+  }
 
 double getCurrentFlow(double currentFlow){
 
@@ -155,10 +167,23 @@ double getCurrentFlow(double currentFlow){
 
 }
 
-double getCurrentCharge(double currentCharge){
+double getCurrentCharge(double currentCharge) {
   //loop through calling your current flow function every 100ms or so and subtract it from whatever your current charge; you must find a way to return the currentCharge inn the getMaxCharge was initially
+if ((getStatus()==CHARGING) && (CHARGE_CURRENT>0)) {
+      if(txCounter>=100){
+        currentCharge += CHARGE_CURRENT;
+        txCounter = 0;  
+        }
+    txCounter++;
+  } else if ((getStatus()==ACTIVE)) {
+    
+  }
+  return currentCharge; 
+  
 }
+
+
 double getSoC(double SoC, double currentCharge, double maxCharge){
   //use your currentCharge and maxCharge to see what SoC you are at
-  
+
 }
