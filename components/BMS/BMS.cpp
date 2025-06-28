@@ -129,24 +129,30 @@ void printModules(){
   }
 }
 
-//SoC Code 
+//SoC Code (Coulomb counting)
 
-double setHallCalibrationInverter(float hallZero) {
-
+double setHallCalibrationInverter() {
+  float hallZero;
+  if (inverterCurrent()==0){
+    hallZero = CURSENSE_ADC;
+  }
+return hallZero;
 //if inverter DC current in = 0 & inverter status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if inverter is on just give the last value 
   
 }
 
-double setHallCalibrationElCon(float hallZero) {
+double setHallCalibrationElCon() {
+  float hallZero;
 
 //When ElCon current ouput = 0 & ElCon status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if ElCon is on just give the last value 
   
 }
 
-double getMaxCharge(double maxCharge, double currentCharge){ 
+double getMaxCharge(){ 
 //if getPackVoltage() is 300-305 V and ElCon output current is greater then zero then enter a loop that adds to a variable, when the ElCon output goes to zero exit the loop and decide wether to 
 //add the total charge to just currentCharge or both currentCharge and MaxCharge based on if we charged the back up to 405-410V (set them equal and return one of them) 
-
+double maxCharge;
+double currentCharge;
   if ((getStatus()==CHARGING) && (getPackVoltage() > 300 && getPackVoltage() < 305) && (CHARGE_CURRENT>0)){
       if(txCounter>=100){
         if (getPackVoltage()<405) {
@@ -161,15 +167,18 @@ double getMaxCharge(double maxCharge, double currentCharge){
   return maxCharge; 
   }
 
-double getCurrentFlow(double currentFlow){
+double getCurrentFlow(){
+  double currentFlow;
+  if
 
 //call on your hallZero functions based on which status message you are recieving (ElCon or Cascadia) then based on the calibration convert the CURSENSE input into a current and return currentFLow
 
 }
 
-double getCurrentCharge(double currentCharge) {
+double getCurrentCharge() {
+  double currentCharge;
   //loop through calling your current flow function every 100ms or so and subtract it from whatever your current charge; you must find a way to return the currentCharge inn the getMaxCharge was initially
-if ((getStatus()==CHARGING) && (CHARGE_CURRENT>0)) {
+if ((getStatus()==CHARGING) && (CHARGE_CURRENT>0)) { //wrong variable `CHARGE_CURRENT`
       if(txCounter>=100){
         currentCharge += CHARGE_CURRENT;
         txCounter = 0;  
@@ -183,7 +192,32 @@ if ((getStatus()==CHARGING) && (CHARGE_CURRENT>0)) {
 }
 
 
-double getSoC(double SoC, double currentCharge, double maxCharge){
-  //use your currentCharge and maxCharge to see what SoC you are at
+double getSoC(){
+  double SoC; 
+  double currentCharge;
+  double maxCharge;
 
+  if(txCounter>=100){
+        SoC = getCurrentCharge()/getMaxCharge()*100;
+        txCounter = 0;
+        }
+    txCounter++;
+    return SoC;
+}
+
+
+
+double inverterCurrent(){
+  double dcBusCurrent;
+if(txCounter>=10){
+  twai_message_t msg;
+
+  if (msg.identifier == 0x8D001031 && msg.data_length_code ==8){ //identifies the correct CAN message before decoding
+    int16_t rawCurrent = msg.data[6] | (msg.data [7]<<8); //extracts the 16 bit signed int from the last two bytes of the CAN message payload;
+    double dcBusCurrent = rawCurrent * 0.1; //converts value to amps
+  }
+  txCounter = 0;
+        }
+    txCounter++;
+    return dcBusCurrent;
 }
