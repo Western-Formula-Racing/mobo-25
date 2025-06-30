@@ -18,6 +18,8 @@ void CANbegin(gpio_num_t rxpin, gpio_num_t txpin);
 void txTask(TimerHandle_t xTimer);
 void rxTask(void *arg);
 //static void timeoutHandler(void *arg);
+extern int txCounter;
+
 
 //void canAlertTask(void *pvParameters);
 void elconControl(double maxVoltage, double maxCurrent, bool enable);

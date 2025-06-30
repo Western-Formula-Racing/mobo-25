@@ -217,17 +217,6 @@ double getHallCurrent()
   return hallCurrent;
 }
 
-// double setHallCalibrationElCon() { *****You are not using the current sensor when charging*****
-//   float hallZero;
-//   if (elconCurrent()==0){
-//     hallZero = CURSENSE_ADC;
-//   }
-// return hallZero;
-
-// //When ElCon current ouput = 0 & ElCon status message is active; then hallZero is equal to whatever CURSENSE_ADC is; if ElCon is on just give the last value
-
-// }
-
 double getMaxCharge()
 {
   // if getPackVoltage() is 300-305 V and ElCon output current is greater then zero then enter a loop that adds to a variable, when the ElCon output goes to zero exit the loop and decide wether to
@@ -259,10 +248,10 @@ double getCurrentCharge()
   // loop through calling your current flow function every 100ms or so and subtract it from whatever your current charge; you must find a way to return the currentCharge inn the getMaxCharge was initially
   if (txCounter >= 100)
   {
-    if ((getStatus() == CHARGING) && (CHARGE_CURRENT > 0))
-    { // wrong variable `CHARGE_CURRENT`
+    if ((getStatus() == CHARGING) && (elconCurrent() > 0))
+    { // wrong variable `elconCurrent()`
 
-      currentCharge += CHARGE_CURRENT;
+      currentCharge += elconCurrent();
       txCounter = 0;
     }
   }
@@ -310,18 +299,18 @@ double inverterCurrent()
 
 double elconCurrent()
 {
-  //   double chargeCurrent;
-  // if(txCounter>=10){
+    double chargeCurrent;
+  if(txCounter>100){
 
-  //   twai_message_t msg;
+    twai_message_t msg;
 
-  //   if (msg.identifier == 0x8D001031 && msg.data_length_code ==8){ //identifies the correct CAN message before decoding
-  //     int16_t rawCurrent = msg.data[6] | (msg.data [7]<<8); //extracts the 16 bit signed int from the last two bytes of the CAN message payload;
-  //     double dcBusCurrent = rawCurrent * 0.1; //converts value to amps
-  //   }
+    if (msg.identifier == 0x18FF50E5 && msg.data_length_code ==8){ //identifies the correct CAN message before decoding
+      int16_t rawCurrent = msg.data[2] | (msg.data [3]<<8); //extracts the 16 bit signed int from the last two bytes of the CAN message payload;
+      double chargeCurrent = rawCurrent * 0.1; //converts value to amps
+    }
 
-  //   txCounter = 0;
-  //         }
-  //     txCounter++;
-  //     return dcBusCurrent;
+    txCounter = 0;
+          }
+      txCounter++;
+      return chargeCurrent;
 }
