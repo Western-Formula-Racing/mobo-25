@@ -29,6 +29,17 @@ double getMaxVoltage(int& index);
 double getMinVoltage();   // minimum cell voltage
 double getMinVoltage(int& index);
 
+//SoC functions
+double setHallCalibrationInverter();
+double setHallCalibrationElCon();
+
+double getCurrentFlow();
+double getMaxCharge(); // integrating current with respect to time
+double getCurrentCharge();
+double getSoC();
+
+
+
 //serial debugging
 void printModules();
 
