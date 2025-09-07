@@ -71,6 +71,9 @@ void txTask(TimerHandle_t xTimer){
     txMessage.data[7] = 0;
 
     twai_transmit(&txMessage,portMAX_DELAY);
+    
+    // Buffer transmitted message for upload if in charging state
+    buffer_can_message_for_upload(txMessage.identifier, txMessage.data);
   }
 
   if(txCounter>=100){
@@ -106,6 +109,10 @@ void rxTask(void *arg){
     if(twai_receive(&rx_msg,portMAX_DELAY) == ESP_OK){
 
       //ESP_LOGI(TAG,"Message recieved with ID: %ld", rx_msg.identifier);
+      
+      // Buffer CAN message for upload if in charging state
+      buffer_can_message_for_upload(rx_msg.identifier, rx_msg.data);
+      
       // Module voltages
       if(rx_msg.identifier >= 1006 && rx_msg.identifier <= 1030){
         double s1 = (rx_msg.data[0] | (int)rx_msg.data[1] << 8)*0.0001;
@@ -214,4 +221,13 @@ uint32_t getCANErrorCount(){
 
 int32_t getModuleTime(int module){
   return moduleTime[module];
+}
+
+void buffer_can_message_for_upload(uint32_t id, uint8_t* data) {
+  // Only buffer messages when in charging state and WiFi is enabled
+  if (getStatus() == CHARGING) {
+    // Get current timestamp with millisecond precision (Unix epoch time if synchronized)
+    double timestamp = get_epoch_timestamp_with_ms();
+    add_can_message_to_buffer(id, data, timestamp);
+  }
 }

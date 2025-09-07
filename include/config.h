@@ -44,4 +44,20 @@
 //telemetry enable
 #define TELEMETRY true
 
+//WiFi Configuration (Update these with your WiFi credentials)
+// Primary WiFi (eduroam - WPA2 Enterprise)
+#define WIFI_SSID_PRIMARY      "eduroam"
+#define WIFI_USERNAME          "your.email@university.edu"
+#define WIFI_PASSWORD_PRIMARY  "your_password"
+
+// Fallback WiFi (Normal WPA2 Personal)
+#define WIFI_SSID_FALLBACK     "YOUR_FALLBACK_SSID"
+#define WIFI_PASSWORD_FALLBACK "YOUR_FALLBACK_PASSWORD"
+
+#define WIFI_UPLOAD_URL "http://3.98.181.12:8085/can"
+#define WIFI_CONNECTION_TIMEOUT_MS 20000  // 20 seconds timeout
+
+// Time synchronization settings
+#define TIMEZONE "UTC"  // Change to your timezone e.g., "EST5EDT", "PST8PDT", "CET-1CEST"
+
 #endif

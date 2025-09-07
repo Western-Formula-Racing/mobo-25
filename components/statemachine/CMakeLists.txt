@@ -1,1 +1,1 @@
-idf_component_register(SRCS "statemachine.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "esp_adc" "BMS" "utils" "CAN")
+idf_component_register(SRCS "statemachine.cpp" INCLUDE_DIRS "." "../../include" REQUIRES "driver" "esp_adc" "BMS" "utils" "CAN" "wifi_manager")

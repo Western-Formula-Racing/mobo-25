@@ -10,6 +10,8 @@ int chargePinBufferCount = 0;
 int airNBuffer[5] = {0,0,0,0,0};
 int airNBufferCount = 0;
 bool onChargeCart = false;
+static bool wifi_initialized = false;
+static TaskHandle_t wifi_upload_task_handle = NULL;
 
 void stateLoop(void){
 
@@ -90,11 +92,45 @@ void stateLoop(void){
     break;
     
     case CHARGING:
+    // Initialize WiFi if not already done
+    if (!wifi_initialized) {
+      ESP_LOGI(TAG, "Initializing WiFi for data upload...");
+      wifi_init_sta();
+      wifi_initialized = true;
+    }
+    
+    // Start WiFi connection
+    if (!is_wifi_connected()) {
+      wifi_start();
+    }
+    
+    // Start upload task if WiFi is connected and task not running
+    if (is_wifi_connected() && wifi_upload_task_handle == NULL) {
+      xTaskCreatePinnedToCore(wifi_upload_task, "wifi_upload", 4096, NULL, 3, &wifi_upload_task_handle, 0);
+      ESP_LOGI(TAG, "Started WiFi upload task");
+    }
+    
     if(stateVariables.chargePin == 1){
+      // Stop WiFi when exiting charging state
+      if (wifi_upload_task_handle != NULL) {
+        vTaskDelete(wifi_upload_task_handle);
+        wifi_upload_task_handle = NULL;
+      }
+      wifi_stop();
+      ESP_LOGI(TAG, "Stopped WiFi - exiting charging state");
+      
       stateVariables.previousState = CHARGING;
       stateVariables.currentState = ACTIVE;
     }
     if(getMaxVoltage() >= MAX_CHARGE){
+      // Stop WiFi when charging completes
+      if (wifi_upload_task_handle != NULL) {
+        vTaskDelete(wifi_upload_task_handle);
+        wifi_upload_task_handle = NULL;
+      }
+      wifi_stop();
+      ESP_LOGI(TAG, "Stopped WiFi - charging complete");
+      
       stateVariables.previousState = CHARGING;
       stateVariables.currentState = CHARGE_COMPLETE;
       ESP_LOGI(TAG,"Charging complete; Waiting 10 seconds...");
@@ -115,6 +151,16 @@ void stateLoop(void){
     break;
 
     case FAULT:
+    // Stop WiFi if it was running (in case we faulted during charging)
+    if (wifi_upload_task_handle != NULL) {
+      vTaskDelete(wifi_upload_task_handle);
+      wifi_upload_task_handle = NULL;
+    }
+    if (is_wifi_connected()) {
+      wifi_stop();
+      ESP_LOGI(TAG, "Stopped WiFi due to fault condition");
+    }
+    
     gpio_set_level(FAULT_LED,1);
     gpio_set_level(AMS_LATCH,0);
     printFault(stateVariables.errors);

@@ -8,6 +8,7 @@
 #include "BMS.h"
 #include "utils.h"
 #include "CAN.h"
+#include "wifi_manager.h"
 
 extern bool onChargeCart;
 

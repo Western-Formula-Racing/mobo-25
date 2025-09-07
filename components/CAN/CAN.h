@@ -10,6 +10,7 @@
 #include "BMS.h"
 #include "statemachine.h"
 #include "utils.h"
+#include "wifi_manager.h"
 
 
 
@@ -25,5 +26,6 @@ void balanceMessage();
 int32_t getMaxCanTimeout();
 uint32_t getCANErrorCount();
 int32_t getModuleTime(int module);
+void buffer_can_message_for_upload(uint32_t id, uint8_t* data);
 
 #endif
