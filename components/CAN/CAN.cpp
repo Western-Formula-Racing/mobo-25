@@ -11,10 +11,11 @@ twai_message_t txMessage = {
 
   // Message type and format settings
     .extd = 0,              // Standard vs extended format
-    .rtr = 0,               // Data vs RTR frame
+    .rtr = 0,                // Data vs RTR frame
     .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
     .self = 0,              // Whether the message is a self reception request (loopback)
     .dlc_non_comp = 0,      // DLC is less than 8
+    .reserved = 0,          // Reserved field
   // Message ID and payload
   .identifier = 1056,
   .data_length_code = 8,
@@ -188,8 +189,18 @@ void elconControl(double maxVoltage, double maxCurrent, bool enable){
 }
 
 void balanceMessage(){
+  // Stop balancing message
   uint16_t minVoltage = getMinVoltage()*10000;
   txMessage.identifier = 999;
+  txMessage.data[0] = (uint8_t)(minVoltage & 0x0F);
+  txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
+  twai_transmit(&txMessage,portMAX_DELAY);
+}
+
+void startBalanceMessage(){
+  // Start balancing message
+  uint16_t minVoltage = getMinVoltage()*10000;
+  txMessage.identifier = 998;
   txMessage.data[0] = (uint8_t)(minVoltage & 0x0F);
   txMessage.data[1] = (uint8_t)(minVoltage & 0xF0)>>8;
   twai_transmit(&txMessage,portMAX_DELAY);

@@ -5,6 +5,7 @@
 #include "config.h"
 #include "esp_adc/adc_oneshot.h"
 #include "statemachine.h"
+#include "WiFi_CAN_Server.h"
 
 extern "C" void app_main(void)
 {
@@ -13,6 +14,10 @@ extern "C" void app_main(void)
   uint32_t loopCounter=0;
   //setup
 
+  WiFi_CAN_Server wifiServer;
+  wifiServer.init("MoboHotspot", "password123");
+  wifiServer.startServer();
+  
   //init inputs
   gpio_set_direction(BSPD_GPIO,GPIO_MODE_INPUT);
   gpio_set_direction(IMD_GPIO,GPIO_MODE_INPUT);
@@ -51,5 +56,3 @@ extern "C" void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
-
-

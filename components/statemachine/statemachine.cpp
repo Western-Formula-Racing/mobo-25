@@ -60,7 +60,7 @@ void stateLoop(void){
     }
     
     //check if time elapsed >8s
-    if((pdTICKS_TO_MS(xTaskGetTickCount())-stateVariables.prechargeStartTime)>8000){
+    if((pdTICKS_TO_MS(xTaskGetTickCount())-stateVariables.prechargeStartTime)>60000){
       stateVariables.previousState = PRECHARGE_CHECK;
       stateVariables.currentState = FAULT;
       stateVariables.errors.error = PRECHARGEFAIL;
