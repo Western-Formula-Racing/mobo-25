@@ -188,7 +188,7 @@ void elconControl(double maxVoltage, double maxCurrent, bool enable){
   txMessage.extd = 0;
 }
 
-void balanceMessage(){
+void stopBalanceMessage(){
   // Stop balancing message
   uint16_t minVoltage = getMinVoltage()*10000;
   txMessage.identifier = 999;

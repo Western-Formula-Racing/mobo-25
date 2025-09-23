@@ -92,7 +92,7 @@ esp_err_t WiFi_CAN_Server::start_balance_handler(httpd_req_t *req) {
 
 esp_err_t WiFi_CAN_Server::end_balance_handler(httpd_req_t *req) {
     ESP_LOGI(TAG, "Received end balance request");
-    balanceMessage();
+    stopBalanceMessage();
     const char* resp = "End balancing message sent";
     httpd_resp_send(req, resp, strlen(resp));
     return ESP_OK;
