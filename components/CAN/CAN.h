@@ -21,7 +21,8 @@ void rxTask(void *arg);
 
 //void canAlertTask(void *pvParameters);
 void elconControl(double maxVoltage, double maxCurrent, bool enable);
-void balanceMessage();
+void stopBalanceMessage();
+void startBalanceMessage();
 int32_t getMaxCanTimeout();
 uint32_t getCANErrorCount();
 int32_t getModuleTime(int module);
