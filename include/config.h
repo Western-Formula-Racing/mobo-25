@@ -16,6 +16,7 @@
 #define STATUS_LED         GPIO_NUM_16   // Green LED
 #define FAULT_LED          GPIO_NUM_15   // Red LED
 #define TSSI_ENABLE        GPIO_NUM_17
+
 //analog inputs
 #define CURSENSE_ADC       ADC_CHANNEL_1    //Current Sensor Input
 #define PRECHSENSE_ADC     ADC_CHANNEL_0    //HV Precharge Sense Input
@@ -37,9 +38,11 @@
 #define THRESHOLD_OVERTEMP      60
 #define THRESHOLD_OVERVOLTAGE   4.15
 #define THRESHOLD_UNDERVOLTAGE  2.6   
-#define THRESHOLD_MAXDELTA      0.2
+#define THRESHOLD_MAXDELTA      0.7
 #define THRESHOLD_OVERCURRENT   150
 #define THRESHOLD_CANTIMEOUT    20000 //milliseconds
+ 
+
 
 //telemetry enable
 #define TELEMETRY true

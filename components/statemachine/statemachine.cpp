@@ -53,7 +53,7 @@ void stateLoop(void){
     
     case PRECHARGE_CHECK:
     //check if precharge voltage is fine, and if at least 2 seconds have passed. (calculated precharge time on ESF is 0.6s)
-    if(getPrechargeVoltage()>(getPackVoltage()*0.9) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
+    if(getPrechargeVoltage()>(getPackVoltage()*0.8) && pdTICKS_TO_MS(xTaskGetTickCount()) - stateVariables.prechargeStartTime > 2000){
       stateVariables.previousState = PRECHARGE_CHECK;
       stateVariables.currentState = ACTIVE;
       gpio_set_level(PRECH_OK,1);
